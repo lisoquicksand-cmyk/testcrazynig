@@ -1,13 +1,22 @@
-import { useCourses } from "@/hooks/useCourses";
+import { useState } from "react";
+import { useCourses, Course } from "@/hooks/useCourses";
 import { useSiteContent } from "@/hooks/useSiteContent";
 import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import CourseCheckoutDialog from "@/components/CourseCheckoutDialog";
 
 const CourseSection = () => {
   const { courses, loading } = useCourses();
   const { content } = useSiteContent();
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const activeCourses = courses.filter((c) => c.is_active);
+
+  const handleCourseClick = (course: Course) => {
+    setSelectedCourse(course);
+    setCheckoutOpen(true);
+  };
 
   if (loading) {
     return (
@@ -58,7 +67,10 @@ const CourseSection = () => {
                     </span>
                   </div>
 
-                  <Button className="w-full py-3 font-bold">
+                  <Button 
+                    className="w-full py-3 font-bold"
+                    onClick={() => handleCourseClick(course)}
+                  >
                     {course.button_text}
                   </Button>
                 </div>
@@ -74,6 +86,12 @@ const CourseSection = () => {
           </div>
         )}
       </div>
+
+      <CourseCheckoutDialog
+        open={checkoutOpen}
+        onOpenChange={setCheckoutOpen}
+        selectedCourse={selectedCourse}
+      />
     </section>
   );
 };
