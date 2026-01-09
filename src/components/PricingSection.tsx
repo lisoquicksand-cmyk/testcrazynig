@@ -8,11 +8,12 @@ import CheckoutDialog from "./CheckoutDialog";
 const PricingSection = () => {
   const { packages, loading } = usePricing();
   const { content } = useSiteContent();
-  const { discount, calculateDiscountedPrice } = useDiscount();
+  const { discounts, calculatePackageDiscount } = useDiscount();
   const [selectedPackage, setSelectedPackage] = useState<PricingPackage | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const activePackages = packages.filter((p) => p.is_active);
+  const discount = discounts.packages;
 
   const handleSelectPackage = (pkg: PricingPackage) => {
     setSelectedPackage(pkg);
@@ -61,7 +62,7 @@ const PricingSection = () => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activePackages.map((pkg) => {
-            const discountedPrice = calculateDiscountedPrice(pkg.price);
+            const discountedPrice = calculatePackageDiscount(pkg.price);
             const showDiscount = hasActiveDiscount && discountedPrice < pkg.price;
             
             return (

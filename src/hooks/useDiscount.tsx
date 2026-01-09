@@ -6,45 +6,58 @@ export interface DiscountSettings {
   isActive: boolean;
 }
 
+export interface AllDiscounts {
+  packages: DiscountSettings;
+  courses: DiscountSettings;
+}
+
+const defaultDiscount: DiscountSettings = { percentage: 0, isActive: false };
+
 export const useDiscount = () => {
-  const [discount, setDiscount] = useState<DiscountSettings>({
-    percentage: 0,
-    isActive: false,
+  const [discounts, setDiscounts] = useState<AllDiscounts>({
+    packages: defaultDiscount,
+    courses: defaultDiscount,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDiscount();
+    fetchDiscounts();
   }, []);
 
-  const fetchDiscount = async () => {
+  const fetchDiscounts = async () => {
     try {
       const { data, error } = await supabase
         .from("site_settings")
         .select("*")
-        .eq("setting_key", "discount")
-        .maybeSingle();
+        .in("setting_key", ["discount_packages", "discount_courses"]);
 
-      if (data && !error && data.setting_value) {
-        const value = data.setting_value as unknown as DiscountSettings;
-        setDiscount(value);
+      if (data && !error) {
+        const newDiscounts: AllDiscounts = { packages: defaultDiscount, courses: defaultDiscount };
+        data.forEach((item) => {
+          if (item.setting_key === "discount_packages") {
+            newDiscounts.packages = item.setting_value as unknown as DiscountSettings;
+          } else if (item.setting_key === "discount_courses") {
+            newDiscounts.courses = item.setting_value as unknown as DiscountSettings;
+          }
+        });
+        setDiscounts(newDiscounts);
       }
     } catch (error) {
-      console.error("Error fetching discount:", error);
+      console.error("Error fetching discounts:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateDiscount = async (newSettings: DiscountSettings) => {
+  const updateDiscount = async (type: "packages" | "courses", newSettings: DiscountSettings) => {
     try {
+      const settingKey = type === "packages" ? "discount_packages" : "discount_courses";
       const jsonValue = JSON.parse(JSON.stringify(newSettings));
       
-      // Check if record exists
       const { data: existing } = await supabase
         .from("site_settings")
         .select("id")
-        .eq("setting_key", "discount")
+        .eq("setting_key", settingKey)
         .maybeSingle();
 
       let error;
@@ -55,20 +68,20 @@ export const useDiscount = () => {
             setting_value: jsonValue, 
             updated_at: new Date().toISOString() 
           })
-          .eq("setting_key", "discount");
+          .eq("setting_key", settingKey);
         error = result.error;
       } else {
         const result = await supabase
           .from("site_settings")
           .insert({ 
-            setting_key: "discount",
+            setting_key: settingKey,
             setting_value: jsonValue 
           });
         error = result.error;
       }
 
       if (!error) {
-        setDiscount(newSettings);
+        setDiscounts(prev => ({ ...prev, [type]: newSettings }));
         return true;
       }
       return false;
@@ -78,18 +91,26 @@ export const useDiscount = () => {
     }
   };
 
-  const calculateDiscountedPrice = (originalPrice: number): number => {
-    if (!discount.isActive || discount.percentage <= 0) {
+  const calculatePackageDiscount = (originalPrice: number): number => {
+    if (!discounts.packages.isActive || discounts.packages.percentage <= 0) {
       return originalPrice;
     }
-    return originalPrice * (1 - discount.percentage / 100);
+    return originalPrice * (1 - discounts.packages.percentage / 100);
+  };
+
+  const calculateCourseDiscount = (originalPrice: number): number => {
+    if (!discounts.courses.isActive || discounts.courses.percentage <= 0) {
+      return originalPrice;
+    }
+    return originalPrice * (1 - discounts.courses.percentage / 100);
   };
 
   return { 
-    discount, 
+    discounts, 
     loading, 
     updateDiscount, 
-    calculateDiscountedPrice,
-    refetch: fetchDiscount 
+    calculatePackageDiscount,
+    calculateCourseDiscount,
+    refetch: fetchDiscounts 
   };
 };
