@@ -9,11 +9,12 @@ import CourseCheckoutDialog from "@/components/CourseCheckoutDialog";
 const CourseSection = () => {
   const { courses, loading } = useCourses();
   const { content } = useSiteContent();
-  const { discount, calculateDiscountedPrice } = useDiscount();
+  const { discounts, calculateCourseDiscount } = useDiscount();
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const activeCourses = courses.filter((c) => c.is_active);
+  const discount = discounts.courses;
   const hasActiveDiscount = discount.isActive && discount.percentage > 0;
 
   const handleCourseClick = (course: Course, discountedPrice: number) => {
@@ -58,7 +59,7 @@ const CourseSection = () => {
         {activeCourses.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {activeCourses.map((course) => {
-              const discountedPrice = calculateDiscountedPrice(course.price);
+              const discountedPrice = calculateCourseDiscount(course.price);
               const showDiscount = hasActiveDiscount && discountedPrice < course.price;
               
               return (
