@@ -186,6 +186,48 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_codes: {
+        Row: {
+          applies_to: string
+          code: string
+          created_at: string
+          discount_percentage: number
+          id: string
+          is_active: boolean
+          times_used: number
+          updated_at: string
+          usage_limit: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          applies_to?: string
+          code: string
+          created_at?: string
+          discount_percentage: number
+          id?: string
+          is_active?: boolean
+          times_used?: number
+          updated_at?: string
+          usage_limit?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          applies_to?: string
+          code?: string
+          created_at?: string
+          discount_percentage?: number
+          id?: string
+          is_active?: boolean
+          times_used?: number
+          updated_at?: string
+          usage_limit?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           created_at: string

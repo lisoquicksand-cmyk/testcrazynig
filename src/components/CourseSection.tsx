@@ -2,16 +2,15 @@ import { useState } from "react";
 import { useCourses, Course } from "@/hooks/useCourses";
 import { useSiteContent } from "@/hooks/useSiteContent";
 import { useDiscount } from "@/hooks/useDiscount";
-import { useCountdown } from "@/hooks/useCountdown";
-import { GraduationCap, Tag, Clock } from "lucide-react";
+import { GraduationCap, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CourseCheckoutDialog from "@/components/CourseCheckoutDialog";
+import CountdownTimer from "./CountdownTimer";
 
 const CourseSection = () => {
   const { courses, loading } = useCourses();
   const { content } = useSiteContent();
   const { discounts, isCourseDiscountActive, calculateCourseDiscount } = useDiscount();
-  const countdown = useCountdown(discounts.courses.endDate);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
@@ -49,22 +48,15 @@ const CourseSection = () => {
 
         {hasActiveDiscount && (
           <div className="flex justify-center mb-8">
-            <div className="bg-primary/10 border border-primary/30 rounded-2xl px-6 py-4 flex flex-col items-center gap-2">
+            <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 border border-primary/30 rounded-2xl px-8 py-5 flex flex-col items-center gap-3 shadow-lg shadow-primary/10">
               <div className="flex items-center gap-3">
-                <Tag className="text-primary" size={24} />
-                <span className="text-lg font-bold text-primary">
+                <Tag className="text-primary animate-bounce" size={28} />
+                <span className="text-xl font-bold text-primary">
                   🎉 מבצע! {discount.percentage}% הנחה על כל הקורסים!
                 </span>
               </div>
-              {discount.endDate && !countdown.isExpired && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock size={16} />
-                  <span>נשאר: </span>
-                  <span className="font-mono font-bold text-primary">
-                    {countdown.days > 0 && `${countdown.days}d `}
-                    {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
-                  </span>
-                </div>
+              {discount.endDate && (
+                <CountdownTimer endDate={discount.endDate} />
               )}
             </div>
           </div>

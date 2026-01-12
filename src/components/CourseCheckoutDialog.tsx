@@ -12,7 +12,9 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Course } from "@/hooks/useCourses";
+import { usePromoCodes } from "@/hooks/usePromoCodes";
 import { GraduationCap, Mail, MessageCircle, CheckCircle, Send } from "lucide-react";
+import PromoCodeInput from "./PromoCodeInput";
 
 interface CourseCheckoutDialogProps {
   open: boolean;
@@ -22,10 +24,30 @@ interface CourseCheckoutDialogProps {
 
 const CourseCheckoutDialog = ({ open, onOpenChange, selectedCourse }: CourseCheckoutDialogProps) => {
   const { toast } = useToast();
+  const { usePromoCode } = usePromoCodes();
   const [discordName, setDiscordName] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  
+  // Promo code state
+  const [appliedPromoCode, setAppliedPromoCode] = useState<string | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+
+  const originalPrice = selectedCourse?.price ?? 0;
+  const finalPrice = promoDiscount > 0 
+    ? Math.round(originalPrice * (1 - promoDiscount / 100)) 
+    : originalPrice;
+
+  const handleApplyPromo = (discount: number, code: string) => {
+    setAppliedPromoCode(code);
+    setPromoDiscount(discount);
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromoCode(null);
+    setPromoDiscount(0);
+  };
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,11 +73,15 @@ const CourseCheckoutDialog = ({ open, onOpenChange, selectedCourse }: CourseChec
     const { error } = await supabase.from("course_orders").insert({
       course_id: selectedCourse.id,
       course_name: selectedCourse.title,
-      price: selectedCourse.price,
+      price: finalPrice,
       discord_name: trimmedDiscord,
       email: trimmedEmail,
       status: "pending",
     });
+
+    if (!error && appliedPromoCode) {
+      await usePromoCode(appliedPromoCode);
+    }
 
     setIsSubmitting(false);
 
@@ -74,6 +100,8 @@ const CourseCheckoutDialog = ({ open, onOpenChange, selectedCourse }: CourseChec
       setDiscordName("");
       setEmail("");
       setIsSuccess(false);
+      setAppliedPromoCode(null);
+      setPromoDiscount(0);
     }, 300);
   };
 
@@ -94,7 +122,19 @@ const CourseCheckoutDialog = ({ open, onOpenChange, selectedCourse }: CourseChec
           <DialogDescription>
             {isSuccess
               ? "נציג יצור איתך קשר בקרוב דרך Discord"
-              : `${selectedCourse.title} - ₪${selectedCourse.price}`}
+              : (
+                <span>
+                  {selectedCourse.title} - 
+                  {promoDiscount > 0 ? (
+                    <>
+                      <span className="line-through text-muted-foreground mx-1">₪{originalPrice}</span>
+                      <span className="text-primary font-bold">₪{finalPrice}</span>
+                    </>
+                  ) : (
+                    <span> ₪{originalPrice}</span>
+                  )}
+                </span>
+              )}
           </DialogDescription>
         </DialogHeader>
 
@@ -148,12 +188,23 @@ const CourseCheckoutDialog = ({ open, onOpenChange, selectedCourse }: CourseChec
               />
             </div>
 
+            <div className="space-y-2">
+              <Label className="text-sm">קוד קופון</Label>
+              <PromoCodeInput
+                type="courses"
+                onApply={handleApplyPromo}
+                onRemove={handleRemovePromo}
+                appliedCode={appliedPromoCode}
+                appliedDiscount={promoDiscount}
+              />
+            </div>
+
             <div className="p-3 bg-muted/30 rounded-lg text-sm text-muted-foreground">
               <p>לאחר שליחת ההזמנה, נציג יצור איתך קשר לתיאום התשלום וההרשמה לקורס.</p>
             </div>
 
             <Button type="submit" className="w-full" disabled={!isFormValid || isSubmitting}>
-              {isSubmitting ? "שולח..." : "שלח הזמנה"}
+              {isSubmitting ? "שולח..." : `שלח הזמנה - ₪${finalPrice}`}
               <Send className="mr-2" size={18} />
             </Button>
           </form>
