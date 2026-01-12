@@ -59,8 +59,9 @@ const Sidebar = () => {
       // Skip if we're in the middle of a programmatic scroll
       if (isScrolling) return;
 
-      // Probe line inside the viewport - use a smaller offset for better precision
-      const probeY = window.innerHeight * 0.25;
+      // Probe line inside the viewport. Using a fixed 200px offset caused the active
+      // section to "jump" when a section is short (e.g. Videos -> Shorts).
+      const probeY = window.innerHeight * 0.35;
 
       // Get all sections that actually exist in the DOM, sorted by their position on the page
       const existingSections = navItems
@@ -80,25 +81,27 @@ const Sidebar = () => {
         return;
       }
 
-      // Check if we're near the bottom of the page - use the last section
-      const scrollBottom = window.scrollY + window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      if (documentHeight - scrollBottom < 100) {
-        setActiveItem(existingSections[existingSections.length - 1].label);
-        return;
-      }
-
-      // Find the section whose top is closest to (but not below) the probe line
-      let bestSection = existingSections[0];
+      // Prefer the section that contains the probe line
       for (const section of existingSections) {
         const rect = section.element.getBoundingClientRect();
-        // If section top is above or at the probe line, it's a candidate
-        if (rect.top <= probeY + 50) {
-          bestSection = section;
+        if (rect.top <= probeY && rect.bottom >= probeY) {
+          setActiveItem(section.label);
+          return;
         }
       }
 
-      setActiveItem(bestSection.label);
+      // Otherwise, pick the last section above the probe line
+      let bestLabel = existingSections[0].label;
+      let bestTop = -Infinity;
+      for (const section of existingSections) {
+        const top = section.element.getBoundingClientRect().top;
+        if (top <= probeY && top > bestTop) {
+          bestTop = top;
+          bestLabel = section.label;
+        }
+      }
+
+      setActiveItem(bestLabel);
     };
 
     // Initial check
