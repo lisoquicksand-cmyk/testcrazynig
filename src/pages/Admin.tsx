@@ -301,30 +301,11 @@ const Admin = () => {
               <div className="border-2 border-border rounded-lg overflow-hidden relative" style={{ height: "70vh" }}>
                 <iframe 
                   src="/" 
-                  className="w-full h-full"
+                  className="w-full h-full pointer-events-none"
                   title="Site Preview"
-                  onLoad={(e) => {
-                    const iframe = e.target as HTMLIFrameElement;
-                    try {
-                      const doc = iframe.contentDocument;
-                      if (doc) {
-                        // Disable all inputs, textareas, and contenteditable elements
-                        const inputs = doc.querySelectorAll('input, textarea, [contenteditable="true"]');
-                        inputs.forEach((el) => {
-                          (el as HTMLElement).setAttribute('readonly', 'true');
-                          (el as HTMLElement).setAttribute('disabled', 'true');
-                          (el as HTMLElement).style.pointerEvents = 'none';
-                        });
-                        // Block keyboard events on the document
-                        doc.addEventListener('keydown', (ev) => ev.preventDefault(), true);
-                        doc.addEventListener('keypress', (ev) => ev.preventDefault(), true);
-                        doc.addEventListener('keyup', (ev) => ev.preventDefault(), true);
-                      }
-                    } catch (err) {
-                      console.log('Could not modify iframe content');
-                    }
-                  }}
                 />
+                {/* Overlay for custom cursor to work on preview */}
+                <div className="absolute inset-0 bg-transparent" />
               </div>
             </div>
           </TabsContent>
