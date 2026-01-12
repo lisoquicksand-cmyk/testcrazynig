@@ -20,6 +20,7 @@ import OrdersTab from "@/components/admin/OrdersTab";
 import CourseOrdersTab from "@/components/admin/CourseOrdersTab";
 import RulesTab from "@/components/admin/RulesTab";
 import CoursesTab from "@/components/admin/CoursesTab";
+import PromoCodesTab from "@/components/admin/PromoCodesTab";
 
 // Preset backgrounds
 const presetBackgrounds = [
@@ -270,7 +271,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="preview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-11 bg-card">
+          <TabsList className="grid w-full grid-cols-12 bg-card">
             <TabsTrigger value="preview">👁️ תצוגה</TabsTrigger>
             <TabsTrigger value="content">✏️ תוכן</TabsTrigger>
             <TabsTrigger value="images">🖼️ תמונות</TabsTrigger>
@@ -280,6 +281,7 @@ const Admin = () => {
             <TabsTrigger value="rules">📜 חוקים</TabsTrigger>
             <TabsTrigger value="orders">📦 הזמנות</TabsTrigger>
             <TabsTrigger value="course-orders">🎓 הזמנות קורסים</TabsTrigger>
+            <TabsTrigger value="promo-codes">🏷️ קופונים</TabsTrigger>
             <TabsTrigger value="background">🎨 רקע</TabsTrigger>
             <TabsTrigger value="settings">⚙️ הגדרות</TabsTrigger>
           </TabsList>
@@ -655,6 +657,11 @@ const Admin = () => {
           {/* Course Orders Tab */}
           <TabsContent value="course-orders">
             <CourseOrdersTab />
+          </TabsContent>
+
+          {/* Promo Codes Tab */}
+          <TabsContent value="promo-codes">
+            <PromoCodesTab />
           </TabsContent>
 
           {/* Background Tab */}
