@@ -21,6 +21,7 @@ import CourseOrdersTab from "@/components/admin/CourseOrdersTab";
 import RulesTab from "@/components/admin/RulesTab";
 import CoursesTab from "@/components/admin/CoursesTab";
 import PromoCodesTab from "@/components/admin/PromoCodesTab";
+import CustomCursor from "@/components/CustomCursor";
 
 // Preset backgrounds
 const presetBackgrounds = [
@@ -225,6 +226,7 @@ const Admin = () => {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen cosmic-bg flex items-center justify-center p-4">
+        <CustomCursor />
         <div className="minecraft-card w-full max-w-md">
           <h1 className="text-2xl font-bold text-center mb-6 text-primary">
             🔐 כניסת מנהל
@@ -261,6 +263,7 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen cosmic-bg p-4 md:p-8">
+      <CustomCursor />
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-primary">🎛️ פאנל ניהול</h1>
