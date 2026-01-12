@@ -64,6 +64,7 @@
 @layer base {
   * {
     @apply border-border;
+    cursor: none !important;
   }
 
   html {
@@ -74,6 +75,14 @@
     @apply bg-background text-foreground font-rubik;
     background: var(--gradient-cosmic);
     min-height: 100vh;
+    cursor: none !important;
+  }
+
+  /* Ensure inputs and textareas still show text cursor on focus */
+  input:focus,
+  textarea:focus,
+  [contenteditable="true"]:focus {
+    cursor: none !important;
   }
 }
 

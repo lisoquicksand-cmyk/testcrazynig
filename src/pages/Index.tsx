@@ -8,6 +8,7 @@ import ContactSection from "@/components/ContactSection";
 import RulesSection from "@/components/RulesSection";
 import CourseSection from "@/components/CourseSection";
 import PricingSection from "@/components/PricingSection";
+import CustomCursor from "@/components/CustomCursor";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Index = () => {
@@ -62,6 +63,7 @@ const Index = () => {
       className={`min-h-screen ${useAnimatedClass ? "cosmic-bg" : ""}`}
       style={getBackgroundStyle()}
     >
+      <CustomCursor />
       <Sidebar />
       
       {/* Main content with sidebar offset */}

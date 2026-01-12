@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Menu, X, Home, User, Video, Film, MessageCircle, CreditCard, Settings, ScrollText, GraduationCap } from "lucide-react";
 import heroLogoDefault from "@/assets/hero-logo.png";
 import { useSiteContent } from "@/hooks/useSiteContent";
+import { useAdminReveal } from "@/hooks/useAdminReveal";
 
 interface NavItem {
   label: string;
@@ -24,6 +25,7 @@ const navItems: NavItem[] = [
 const Sidebar = () => {
   const navigate = useNavigate();
   const { content } = useSiteContent();
+  const { isAdminVisible } = useAdminReveal();
   const [isOpen, setIsOpen] = useState(false);
   const [activeItem, setActiveItem] = useState("בית");
   const [isScrolling, setIsScrolling] = useState(false);
@@ -167,17 +169,19 @@ const Sidebar = () => {
             </ul>
           </nav>
 
-          {/* Admin Button */}
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              navigate("/admin");
-            }}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-accent/20 text-accent hover:bg-accent/30 transition-all duration-300 hover:scale-105 border border-accent/30 mt-4"
-          >
-            <Settings size={18} className="animate-spin" style={{ animationDuration: "3s" }} />
-            <span className="font-medium">פאנל ניהול</span>
-          </button>
+          {/* Admin Button - Hidden by default, revealed via console command */}
+          {isAdminVisible && (
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                navigate("/admin");
+              }}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg bg-accent/20 text-accent hover:bg-accent/30 transition-all duration-300 hover:scale-105 border border-accent/30 mt-4 animate-fade-in"
+            >
+              <Settings size={18} className="animate-spin" style={{ animationDuration: "3s" }} />
+              <span className="font-medium">פאנל ניהול</span>
+            </button>
+          )}
         </div>
       </aside>
 
