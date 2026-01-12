@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface DiscountSettings {
   percentage: number;
   isActive: boolean;
+  endDate: string | null; // ISO date string
 }
 
 export interface AllDiscounts {
@@ -11,7 +12,12 @@ export interface AllDiscounts {
   courses: DiscountSettings;
 }
 
-const defaultDiscount: DiscountSettings = { percentage: 0, isActive: false };
+const defaultDiscount: DiscountSettings = { percentage: 0, isActive: false, endDate: null };
+
+const isDiscountExpired = (endDate: string | null): boolean => {
+  if (!endDate) return false;
+  return new Date(endDate).getTime() < new Date().getTime();
+};
 
 export const useDiscount = () => {
   const [discounts, setDiscounts] = useState<AllDiscounts>({
@@ -91,15 +97,35 @@ export const useDiscount = () => {
     }
   };
 
-  const calculatePackageDiscount = (originalPrice: number): number => {
+  const isPackageDiscountActive = useCallback((): boolean => {
     if (!discounts.packages.isActive || discounts.packages.percentage <= 0) {
+      return false;
+    }
+    if (isDiscountExpired(discounts.packages.endDate)) {
+      return false;
+    }
+    return true;
+  }, [discounts.packages]);
+
+  const isCourseDiscountActive = useCallback((): boolean => {
+    if (!discounts.courses.isActive || discounts.courses.percentage <= 0) {
+      return false;
+    }
+    if (isDiscountExpired(discounts.courses.endDate)) {
+      return false;
+    }
+    return true;
+  }, [discounts.courses]);
+
+  const calculatePackageDiscount = (originalPrice: number): number => {
+    if (!isPackageDiscountActive()) {
       return originalPrice;
     }
     return originalPrice * (1 - discounts.packages.percentage / 100);
   };
 
   const calculateCourseDiscount = (originalPrice: number): number => {
-    if (!discounts.courses.isActive || discounts.courses.percentage <= 0) {
+    if (!isCourseDiscountActive()) {
       return originalPrice;
     }
     return originalPrice * (1 - discounts.courses.percentage / 100);
@@ -111,6 +137,8 @@ export const useDiscount = () => {
     updateDiscount, 
     calculatePackageDiscount,
     calculateCourseDiscount,
+    isPackageDiscountActive,
+    isCourseDiscountActive,
     refetch: fetchDiscounts 
   };
 };

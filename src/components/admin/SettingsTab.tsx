@@ -7,7 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminPassword } from "@/hooks/useAdminPassword";
 import { useDiscount } from "@/hooks/useDiscount";
-import { Save, Lock, Eye, EyeOff, Percent, Tag, GraduationCap, Package } from "lucide-react";
+import { Save, Lock, Eye, EyeOff, Percent, Package, GraduationCap, Clock } from "lucide-react";
 
 const SettingsTab = () => {
   const { toast } = useToast();
@@ -23,19 +23,23 @@ const SettingsTab = () => {
   // Package Discount state
   const [packageDiscountPercentage, setPackageDiscountPercentage] = useState(0);
   const [packageDiscountActive, setPackageDiscountActive] = useState(false);
+  const [packageDiscountEndDate, setPackageDiscountEndDate] = useState("");
   const [savingPackageDiscount, setSavingPackageDiscount] = useState(false);
 
   // Course Discount state
   const [courseDiscountPercentage, setCourseDiscountPercentage] = useState(0);
   const [courseDiscountActive, setCourseDiscountActive] = useState(false);
+  const [courseDiscountEndDate, setCourseDiscountEndDate] = useState("");
   const [savingCourseDiscount, setSavingCourseDiscount] = useState(false);
 
   useEffect(() => {
     if (!discountLoading) {
       setPackageDiscountPercentage(discounts.packages.percentage);
       setPackageDiscountActive(discounts.packages.isActive);
+      setPackageDiscountEndDate(discounts.packages.endDate || "");
       setCourseDiscountPercentage(discounts.courses.percentage);
       setCourseDiscountActive(discounts.courses.isActive);
+      setCourseDiscountEndDate(discounts.courses.endDate || "");
     }
   }, [discounts, discountLoading]);
 
@@ -74,6 +78,7 @@ const SettingsTab = () => {
     const success = await updateDiscount("packages", {
       percentage: packageDiscountPercentage,
       isActive: packageDiscountActive,
+      endDate: packageDiscountEndDate || null,
     });
     
     if (success) {
@@ -89,6 +94,7 @@ const SettingsTab = () => {
     const success = await updateDiscount("courses", {
       percentage: courseDiscountPercentage,
       isActive: courseDiscountActive,
+      endDate: courseDiscountEndDate || null,
     });
     
     if (success) {
@@ -157,10 +163,31 @@ const SettingsTab = () => {
             <span className="flex items-center text-muted-foreground">אחוז הנחה (0-100)</span>
           </div>
 
+          <div className="space-y-2">
+            <Label className="text-lg flex items-center gap-2">
+              <Clock size={18} className="text-primary" />
+              תאריך ושעת סיום ההנחה
+            </Label>
+            <Input
+              type="datetime-local"
+              value={packageDiscountEndDate}
+              onChange={(e) => setPackageDiscountEndDate(e.target.value)}
+              className="bg-background/50"
+            />
+            <p className="text-xs text-muted-foreground">
+              השאר ריק להנחה ללא הגבלת זמן (צריך לכבות ידנית)
+            </p>
+          </div>
+
           {packageDiscountActive && packageDiscountPercentage > 0 && (
             <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
               <p className="text-sm text-center">
                 🎉 הנחה של <span className="font-bold text-primary">{packageDiscountPercentage}%</span> פעילה על כל החבילות!
+                {packageDiscountEndDate && (
+                  <span className="block mt-1 text-xs">
+                    תסתיים ב: {new Date(packageDiscountEndDate).toLocaleString('he-IL')}
+                  </span>
+                )}
               </p>
             </div>
           )}
@@ -232,10 +259,31 @@ const SettingsTab = () => {
             <span className="flex items-center text-muted-foreground">אחוז הנחה (0-100)</span>
           </div>
 
+          <div className="space-y-2">
+            <Label className="text-lg flex items-center gap-2">
+              <Clock size={18} className="text-primary" />
+              תאריך ושעת סיום ההנחה
+            </Label>
+            <Input
+              type="datetime-local"
+              value={courseDiscountEndDate}
+              onChange={(e) => setCourseDiscountEndDate(e.target.value)}
+              className="bg-background/50"
+            />
+            <p className="text-xs text-muted-foreground">
+              השאר ריק להנחה ללא הגבלת זמן (צריך לכבות ידנית)
+            </p>
+          </div>
+
           {courseDiscountActive && courseDiscountPercentage > 0 && (
             <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
               <p className="text-sm text-center">
                 🎉 הנחה של <span className="font-bold text-primary">{courseDiscountPercentage}%</span> פעילה על כל הקורסים!
+                {courseDiscountEndDate && (
+                  <span className="block mt-1 text-xs">
+                    תסתיים ב: {new Date(courseDiscountEndDate).toLocaleString('he-IL')}
+                  </span>
+                )}
               </p>
             </div>
           )}

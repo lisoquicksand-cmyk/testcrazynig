@@ -2,13 +2,15 @@ import { useState } from "react";
 import { usePricing, PricingPackage } from "@/hooks/usePricing";
 import { useSiteContent } from "@/hooks/useSiteContent";
 import { useDiscount } from "@/hooks/useDiscount";
-import { Check, Star, Tag } from "lucide-react";
+import { useCountdown } from "@/hooks/useCountdown";
+import { Check, Star, Tag, Clock } from "lucide-react";
 import CheckoutDialog from "./CheckoutDialog";
 
 const PricingSection = () => {
   const { packages, loading } = usePricing();
   const { content } = useSiteContent();
-  const { discounts, calculatePackageDiscount } = useDiscount();
+  const { discounts, isPackageDiscountActive, calculatePackageDiscount } = useDiscount();
+  const countdown = useCountdown(discounts.packages.endDate);
   const [selectedPackage, setSelectedPackage] = useState<PricingPackage | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
@@ -34,7 +36,7 @@ const PricingSection = () => {
     return null;
   }
 
-  const hasActiveDiscount = discount.isActive && discount.percentage > 0;
+  const hasActiveDiscount = isPackageDiscountActive();
 
   return (
     <section id="payment" className="py-16 px-4">
@@ -51,11 +53,23 @@ const PricingSection = () => {
 
         {hasActiveDiscount && (
           <div className="flex justify-center mb-8">
-            <div className="bg-primary/10 border border-primary/30 rounded-full px-6 py-3 flex items-center gap-3 animate-pulse">
-              <Tag className="text-primary" size={24} />
-              <span className="text-lg font-bold text-primary">
-                🎉 מבצע! {discount.percentage}% הנחה על כל החבילות!
-              </span>
+            <div className="bg-primary/10 border border-primary/30 rounded-2xl px-6 py-4 flex flex-col items-center gap-2">
+              <div className="flex items-center gap-3">
+                <Tag className="text-primary" size={24} />
+                <span className="text-lg font-bold text-primary">
+                  🎉 מבצע! {discount.percentage}% הנחה על כל החבילות!
+                </span>
+              </div>
+              {discount.endDate && !countdown.isExpired && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock size={16} />
+                  <span>נשאר: </span>
+                  <span className="font-mono font-bold text-primary">
+                    {countdown.days > 0 && `${countdown.days}d `}
+                    {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
