@@ -50,6 +50,23 @@ $$;
 SET default_table_access_method = heap;
 
 --
+-- Name: course_orders; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.course_orders (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    course_id uuid,
+    course_name text NOT NULL,
+    price numeric NOT NULL,
+    discord_name text NOT NULL,
+    email text NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: courses; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -105,6 +122,27 @@ CREATE TABLE public.pricing_packages (
 
 
 --
+-- Name: promo_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.promo_codes (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    code text NOT NULL,
+    discount_percentage integer NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    applies_to text DEFAULT 'all'::text NOT NULL,
+    usage_limit integer,
+    times_used integer DEFAULT 0 NOT NULL,
+    valid_from timestamp with time zone DEFAULT now(),
+    valid_until timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT promo_codes_applies_to_check CHECK ((applies_to = ANY (ARRAY['all'::text, 'packages'::text, 'courses'::text]))),
+    CONSTRAINT promo_codes_discount_percentage_check CHECK (((discount_percentage >= 0) AND (discount_percentage <= 100)))
+);
+
+
+--
 -- Name: site_settings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -136,6 +174,14 @@ CREATE TABLE public.videos (
 
 
 --
+-- Name: course_orders course_orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.course_orders
+    ADD CONSTRAINT course_orders_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: courses courses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -157,6 +203,22 @@ ALTER TABLE ONLY public.orders
 
 ALTER TABLE ONLY public.pricing_packages
     ADD CONSTRAINT pricing_packages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: promo_codes promo_codes_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.promo_codes
+    ADD CONSTRAINT promo_codes_code_key UNIQUE (code);
+
+
+--
+-- Name: promo_codes promo_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.promo_codes
+    ADD CONSTRAINT promo_codes_pkey PRIMARY KEY (id);
 
 
 --
@@ -184,6 +246,13 @@ ALTER TABLE ONLY public.videos
 
 
 --
+-- Name: course_orders update_course_orders_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_course_orders_updated_at BEFORE UPDATE ON public.course_orders FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
 -- Name: courses update_courses_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -198,6 +267,21 @@ CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON public.orders FOR EACH 
 
 
 --
+-- Name: promo_codes update_promo_codes_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_promo_codes_updated_at BEFORE UPDATE ON public.promo_codes FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: course_orders course_orders_course_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.course_orders
+    ADD CONSTRAINT course_orders_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id) ON DELETE SET NULL;
+
+
+--
 -- Name: orders orders_package_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -206,10 +290,24 @@ ALTER TABLE ONLY public.orders
 
 
 --
+-- Name: course_orders Anyone can create course orders; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can create course orders" ON public.course_orders FOR INSERT WITH CHECK (true);
+
+
+--
 -- Name: orders Anyone can create orders; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Anyone can create orders" ON public.orders FOR INSERT WITH CHECK (true);
+
+
+--
+-- Name: course_orders Anyone can delete course orders; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can delete course orders" ON public.course_orders FOR DELETE USING (true);
 
 
 --
@@ -234,6 +332,13 @@ CREATE POLICY "Anyone can modify pricing" ON public.pricing_packages USING (true
 
 
 --
+-- Name: promo_codes Anyone can modify promo codes; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can modify promo codes" ON public.promo_codes USING (true) WITH CHECK (true);
+
+
+--
 -- Name: site_settings Anyone can modify settings; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -245,6 +350,13 @@ CREATE POLICY "Anyone can modify settings" ON public.site_settings USING (true) 
 --
 
 CREATE POLICY "Anyone can modify videos" ON public.videos USING (true) WITH CHECK (true);
+
+
+--
+-- Name: course_orders Anyone can update course orders; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can update course orders" ON public.course_orders FOR UPDATE USING (true);
 
 
 --
@@ -276,10 +388,24 @@ CREATE POLICY "Anyone can view active videos" ON public.videos FOR SELECT USING 
 
 
 --
+-- Name: course_orders Anyone can view course orders; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can view course orders" ON public.course_orders FOR SELECT USING (true);
+
+
+--
 -- Name: orders Anyone can view orders; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Anyone can view orders" ON public.orders FOR SELECT USING (true);
+
+
+--
+-- Name: promo_codes Anyone can view promo codes; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can view promo codes" ON public.promo_codes FOR SELECT USING (true);
 
 
 --
@@ -288,6 +414,12 @@ CREATE POLICY "Anyone can view orders" ON public.orders FOR SELECT USING (true);
 
 CREATE POLICY "Anyone can view site settings" ON public.site_settings FOR SELECT USING (true);
 
+
+--
+-- Name: course_orders; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.course_orders ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: courses; Type: ROW SECURITY; Schema: public; Owner: -
@@ -306,6 +438,12 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.pricing_packages ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: promo_codes; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.promo_codes ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: site_settings; Type: ROW SECURITY; Schema: public; Owner: -
