@@ -2,20 +2,22 @@ import { useState } from "react";
 import { useCourses, Course } from "@/hooks/useCourses";
 import { useSiteContent } from "@/hooks/useSiteContent";
 import { useDiscount } from "@/hooks/useDiscount";
-import { GraduationCap, Tag } from "lucide-react";
+import { useCountdown } from "@/hooks/useCountdown";
+import { GraduationCap, Tag, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CourseCheckoutDialog from "@/components/CourseCheckoutDialog";
 
 const CourseSection = () => {
   const { courses, loading } = useCourses();
   const { content } = useSiteContent();
-  const { discounts, calculateCourseDiscount } = useDiscount();
+  const { discounts, isCourseDiscountActive, calculateCourseDiscount } = useDiscount();
+  const countdown = useCountdown(discounts.courses.endDate);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const activeCourses = courses.filter((c) => c.is_active);
   const discount = discounts.courses;
-  const hasActiveDiscount = discount.isActive && discount.percentage > 0;
+  const hasActiveDiscount = isCourseDiscountActive();
 
   const handleCourseClick = (course: Course, discountedPrice: number) => {
     setSelectedCourse({
@@ -47,11 +49,23 @@ const CourseSection = () => {
 
         {hasActiveDiscount && (
           <div className="flex justify-center mb-8">
-            <div className="bg-primary/10 border border-primary/30 rounded-full px-6 py-3 flex items-center gap-3 animate-pulse">
-              <Tag className="text-primary" size={24} />
-              <span className="text-lg font-bold text-primary">
-                🎉 מבצע! {discount.percentage}% הנחה על כל הקורסים!
-              </span>
+            <div className="bg-primary/10 border border-primary/30 rounded-2xl px-6 py-4 flex flex-col items-center gap-2">
+              <div className="flex items-center gap-3">
+                <Tag className="text-primary" size={24} />
+                <span className="text-lg font-bold text-primary">
+                  🎉 מבצע! {discount.percentage}% הנחה על כל הקורסים!
+                </span>
+              </div>
+              {discount.endDate && !countdown.isExpired && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock size={16} />
+                  <span>נשאר: </span>
+                  <span className="font-mono font-bold text-primary">
+                    {countdown.days > 0 && `${countdown.days}d `}
+                    {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
