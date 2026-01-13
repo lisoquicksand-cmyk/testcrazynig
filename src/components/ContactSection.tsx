@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, Youtube, ExternalLink, Copy, Check } from "lucide-react";
+import { MessageCircle, Youtube, ExternalLink, Copy, Check, Bell } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useSiteContent } from "@/hooks/useSiteContent";
+import CustomerMessagesDialog from "./CustomerMessagesDialog";
 
 const contactMethods = [
   {
@@ -30,6 +31,7 @@ const ContactSection = () => {
   const { content } = useSiteContent();
   const [selectedMethod, setSelectedMethod] = useState<typeof contactMethods[0] | null>(null);
   const [copied, setCopied] = useState(false);
+  const [messagesDialogOpen, setMessagesDialogOpen] = useState(false);
 
   const handleCopy = () => {
     if (selectedMethod) {
@@ -76,9 +78,19 @@ const ContactSection = () => {
           <p className="text-muted-foreground mb-6">
             אל תהססו לפנות! אשמח לשמוע מכם ולעזור בכל שאלה לגבי שירותי העריכה שלי.
           </p>
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-primary/20 rounded-full text-primary font-medium">
-            <MessageCircle size={20} />
-            <span>זמני תגובה: עד 24 שעות</span>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="inline-flex items-center gap-2 px-6 py-3 bg-primary/20 rounded-full text-primary font-medium">
+              <MessageCircle size={20} />
+              <span>זמני תגובה: עד 24 שעות</span>
+            </div>
+            <Button
+              onClick={() => setMessagesDialogOpen(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              <Bell size={18} />
+              בדוק הודעות על ההזמנה שלי
+            </Button>
           </div>
         </div>
       </div>
@@ -120,6 +132,11 @@ const ContactSection = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <CustomerMessagesDialog
+        open={messagesDialogOpen}
+        onOpenChange={setMessagesDialogOpen}
+      />
     </section>
   );
 };
