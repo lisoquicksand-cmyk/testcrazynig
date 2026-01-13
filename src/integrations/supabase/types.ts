@@ -97,6 +97,51 @@ export type Database = {
         }
         Relationships: []
       }
+      order_messages: {
+        Row: {
+          course_order_id: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          order_id: string | null
+          sender_type: string
+        }
+        Insert: {
+          course_order_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          order_id?: string | null
+          sender_type: string
+        }
+        Update: {
+          course_order_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          order_id?: string | null
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_messages_course_order_id_fkey"
+            columns: ["course_order_id"]
+            isOneToOne: false
+            referencedRelation: "course_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string

@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { useOrders, Order } from "@/hooks/useOrders";
+import { useAllOrderMessageCounts } from "@/hooks/useOrderMessages";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Package, Mail, MessageCircle, Check, Clock, X, Trash2 } from "lucide-react";
+import { RefreshCw, Package, Mail, MessageCircle, Check, Clock, X, Trash2, MessageSquare } from "lucide-react";
+import OrderMessagesDialog from "./OrderMessagesDialog";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-500/20 text-yellow-500",
@@ -17,7 +20,22 @@ const statusLabels: Record<string, string> = {
 
 const OrdersTab = () => {
   const { orders, loading, refetch, updateOrderStatus, deleteOrder } = useOrders();
+  const { messageCounts, refetch: refetchCounts } = useAllOrderMessageCounts();
   const { toast } = useToast();
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [messagesDialogOpen, setMessagesDialogOpen] = useState(false);
+
+  const handleOpenMessages = (order: Order) => {
+    setSelectedOrder(order);
+    setMessagesDialogOpen(true);
+  };
+
+  const handleCloseMessages = (open: boolean) => {
+    setMessagesDialogOpen(open);
+    if (!open) {
+      refetchCounts();
+    }
+  };
 
   const handleStatusChange = async (id: string, status: string) => {
     const success = await updateOrderStatus(id, status);
@@ -101,6 +119,20 @@ const OrdersTab = () => {
                     </span>
 
                     <div className="flex gap-1 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenMessages(order)}
+                        className="text-blue-500 hover:text-blue-400 relative"
+                      >
+                        <MessageSquare size={14} className="ml-1" />
+                        הודעות
+                        {messageCounts[order.id] > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                            {messageCounts[order.id]}
+                          </span>
+                        )}
+                      </Button>
                       {order.status !== "completed" && (
                         <Button
                           size="sm"
@@ -150,6 +182,13 @@ const OrdersTab = () => {
           </div>
         )}
       </div>
+
+      <OrderMessagesDialog
+        open={messagesDialogOpen}
+        onOpenChange={handleCloseMessages}
+        orderId={selectedOrder?.id}
+        customerName={selectedOrder?.discord_name || "לקוח"}
+      />
     </div>
   );
 };
