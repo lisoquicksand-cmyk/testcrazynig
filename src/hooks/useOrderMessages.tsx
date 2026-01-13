@@ -80,6 +80,21 @@ export const useOrderMessages = (orderId?: string, courseOrderId?: string) => {
     return true;
   };
 
+  const deleteMessage = async (messageId: string) => {
+    const { error } = await supabase
+      .from("order_messages")
+      .delete()
+      .eq("id", messageId);
+
+    if (error) {
+      console.error("Error deleting message:", error);
+      return false;
+    }
+
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    return true;
+  };
+
   const markAsRead = async (messageIds: string[]) => {
     const { error } = await supabase
       .from("order_messages")
@@ -100,7 +115,7 @@ export const useOrderMessages = (orderId?: string, courseOrderId?: string) => {
     return true;
   };
 
-  return { messages, loading, sendMessage, markAsRead, unreadCount, refetch: fetchMessages };
+  return { messages, loading, sendMessage, markAsRead, deleteMessage, unreadCount, refetch: fetchMessages };
 };
 
 // Hook to get message counts for all orders

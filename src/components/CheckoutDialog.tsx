@@ -89,6 +89,8 @@ const CheckoutDialog = ({ open, onOpenChange, selectedPackage }: CheckoutDialogP
       console.error("Order error:", error);
       toast({ title: "שגיאה בשליחת ההזמנה", variant: "destructive" });
     } else {
+      // Save email to localStorage for message notifications
+      localStorage.setItem("customerEmail", trimmedEmail);
       setIsSuccess(true);
       toast({ title: "ההזמנה נשלחה בהצלחה!" });
     }
