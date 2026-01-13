@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrderMessages } from "@/hooks/useOrderMessages";
-import { Send, MessageCircle } from "lucide-react";
+import { Send, MessageCircle, Trash2 } from "lucide-react";
 
 interface OrderMessagesDialogProps {
   open: boolean;
@@ -20,7 +20,7 @@ const OrderMessagesDialog = ({
   courseOrderId,
   customerName,
 }: OrderMessagesDialogProps) => {
-  const { messages, loading, sendMessage, markAsRead } = useOrderMessages(
+  const { messages, loading, sendMessage, markAsRead, deleteMessage } = useOrderMessages(
     orderId,
     courseOrderId
   );
@@ -53,6 +53,10 @@ const OrderMessagesDialog = ({
       setNewMessage("");
     }
     setSending(false);
+  };
+
+  const handleDelete = async (messageId: string) => {
+    await deleteMessage(messageId);
   };
 
   const formatTime = (dateString: string) => {
@@ -92,12 +96,19 @@ const OrderMessagesDialog = ({
                   }`}
                 >
                   <div
-                    className={`max-w-[80%] p-3 rounded-lg ${
+                    className={`max-w-[80%] p-3 rounded-lg relative group ${
                       msg.sender_type === "admin"
                         ? "bg-primary/20 text-foreground"
                         : "bg-green-500/20 text-foreground"
                     }`}
                   >
+                    <button
+                      onClick={() => handleDelete(msg.id)}
+                      className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 transition-opacity p-1"
+                      title="מחק הודעה"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                     <p className="text-xs font-bold mb-1">
                       {msg.sender_type === "admin" ? "נציג CrazyEdits" : customerName}
                     </p>

@@ -9,6 +9,7 @@ import RulesSection from "@/components/RulesSection";
 import CourseSection from "@/components/CourseSection";
 import PricingSection from "@/components/PricingSection";
 import CustomCursor from "@/components/CustomCursor";
+import CustomerMessageBanner from "@/components/CustomerMessageBanner";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Index = () => {
@@ -63,6 +64,7 @@ const Index = () => {
       className={`min-h-screen ${useAnimatedClass ? "cosmic-bg" : ""}`}
       style={getBackgroundStyle()}
     >
+      <CustomerMessageBanner />
       <CustomCursor />
       <Sidebar />
       
