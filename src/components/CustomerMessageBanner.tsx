@@ -39,6 +39,7 @@ const CustomerMessageBanner = () => {
   const [dismissed, setDismissed] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [selectedSound, setSelectedSound] = useState<SoundType>("chime");
+  const [volume, setVolume] = useState(0.7);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load customer email and sound preference from localStorage
@@ -55,6 +56,10 @@ const CustomerMessageBanner = () => {
     if (soundType) {
       setSelectedSound(soundType);
     }
+    const storedVolume = localStorage.getItem("notificationVolume");
+    if (storedVolume) {
+      setVolume(parseFloat(storedVolume));
+    }
   }, []);
 
   const toggleSound = () => {
@@ -63,14 +68,23 @@ const CustomerMessageBanner = () => {
     localStorage.setItem("notificationSound", String(newValue));
     if (newValue) {
       // Play a test sound when enabling
-      playNotificationSound(selectedSound);
+      playNotificationSound(selectedSound, volume);
     }
   };
 
   const handleSoundChange = (sound: SoundType) => {
     setSelectedSound(sound);
     localStorage.setItem("notificationSoundType", sound);
-    playNotificationSound(sound);
+    playNotificationSound(sound, volume);
+  };
+
+  const handleVolumeChange = (newVolume: number) => {
+    setVolume(newVolume);
+    localStorage.setItem("notificationVolume", String(newVolume));
+  };
+
+  const testVolume = () => {
+    playNotificationSound(selectedSound, volume);
   };
 
   // Fetch orders and check for unread messages
@@ -317,13 +331,14 @@ const CustomerMessageBanner = () => {
                   size="sm"
                   variant="ghost"
                   className="text-primary-foreground hover:bg-primary-foreground/20 gap-1"
-                  title="בחר צליל התראה"
+                  title="הגדרות צליל"
                 >
                   <Music size={16} />
                   <span className="text-xs hidden sm:inline">{soundNames[selectedSound]}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-card border-border">
+              <DropdownMenuContent align="end" className="bg-card border-border w-48">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">סוג צליל</div>
                 {(Object.keys(soundNames) as SoundType[]).map((sound) => (
                   <DropdownMenuItem
                     key={sound}
@@ -334,6 +349,26 @@ const CustomerMessageBanner = () => {
                     {selectedSound === sound && " ✓"}
                   </DropdownMenuItem>
                 ))}
+                <div className="border-t border-border my-1" />
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">עוצמה</div>
+                <div className="px-2 py-2 flex items-center gap-2">
+                  <VolumeX size={14} className="text-muted-foreground" />
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={volume}
+                    onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                    onMouseUp={testVolume}
+                    onTouchEnd={testVolume}
+                    className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                  <Volume2 size={14} className="text-muted-foreground" />
+                </div>
+                <div className="px-2 pb-2 text-center text-xs text-muted-foreground">
+                  {Math.round(volume * 100)}%
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
