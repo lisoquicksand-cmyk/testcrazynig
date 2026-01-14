@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, X, Send, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Bell, X, Send, MessageCircle, ChevronDown, ChevronUp, Volume2, VolumeX } from "lucide-react";
 import { playNotificationSound } from "@/lib/notificationSound";
 
 interface Message {
@@ -31,15 +31,30 @@ const CustomerMessageBanner = () => {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load customer email from localStorage
+  // Load customer email and sound preference from localStorage
   useEffect(() => {
     const email = localStorage.getItem("customerEmail");
     if (email) {
       setCustomerEmail(email);
     }
+    const soundPref = localStorage.getItem("notificationSound");
+    if (soundPref !== null) {
+      setSoundEnabled(soundPref === "true");
+    }
   }, []);
+
+  const toggleSound = () => {
+    const newValue = !soundEnabled;
+    setSoundEnabled(newValue);
+    localStorage.setItem("notificationSound", String(newValue));
+    if (newValue) {
+      // Play a test sound when enabling
+      playNotificationSound();
+    }
+  };
 
   // Fetch orders and check for unread messages
   useEffect(() => {
@@ -123,8 +138,11 @@ const CustomerMessageBanner = () => {
           if (isOurOrder) {
             setUnreadMessages((prev) => [...prev, newMsg]);
             setDismissed(false);
-            // Play notification sound
-            playNotificationSound();
+            // Play notification sound if enabled
+            const soundPref = localStorage.getItem("notificationSound");
+            if (soundPref !== "false") {
+              playNotificationSound();
+            }
           }
         }
       )
@@ -275,6 +293,15 @@ const CustomerMessageBanner = () => {
                   צפה בהודעות <ChevronDown size={16} />
                 </>
               )}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={toggleSound}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+              title={soundEnabled ? "כבה צליל התראות" : "הדלק צליל התראות"}
+            >
+              {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
             </Button>
             <Button
               size="sm"
