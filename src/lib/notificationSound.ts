@@ -18,12 +18,17 @@ const getAudioContext = (): AudioContext => {
   return audioContext;
 };
 
-const playChime = (ctx: AudioContext) => {
+const getVolume = (): number => {
+  const stored = localStorage.getItem("notificationVolume");
+  return stored ? parseFloat(stored) : 0.7;
+};
+
+const playChime = (ctx: AudioContext, masterGain: GainNode) => {
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
 
   oscillator.connect(gainNode);
-  gainNode.connect(ctx.destination);
+  gainNode.connect(masterGain);
 
   oscillator.frequency.setValueAtTime(880, ctx.currentTime);
   oscillator.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.1);
@@ -39,12 +44,12 @@ const playChime = (ctx: AudioContext) => {
   oscillator.stop(ctx.currentTime + 0.3);
 };
 
-const playBell = (ctx: AudioContext) => {
+const playBell = (ctx: AudioContext, masterGain: GainNode) => {
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
 
   oscillator.connect(gainNode);
-  gainNode.connect(ctx.destination);
+  gainNode.connect(masterGain);
 
   oscillator.frequency.setValueAtTime(1200, ctx.currentTime);
   oscillator.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.5);
@@ -57,12 +62,12 @@ const playBell = (ctx: AudioContext) => {
   oscillator.stop(ctx.currentTime + 0.5);
 };
 
-const playPop = (ctx: AudioContext) => {
+const playPop = (ctx: AudioContext, masterGain: GainNode) => {
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
 
   oscillator.connect(gainNode);
-  gainNode.connect(ctx.destination);
+  gainNode.connect(masterGain);
 
   oscillator.frequency.setValueAtTime(600, ctx.currentTime);
   oscillator.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.1);
@@ -75,14 +80,14 @@ const playPop = (ctx: AudioContext) => {
   oscillator.stop(ctx.currentTime + 0.15);
 };
 
-const playDing = (ctx: AudioContext) => {
+const playDing = (ctx: AudioContext, masterGain: GainNode) => {
   const oscillator = ctx.createOscillator();
   const oscillator2 = ctx.createOscillator();
   const gainNode = ctx.createGain();
 
   oscillator.connect(gainNode);
   oscillator2.connect(gainNode);
-  gainNode.connect(ctx.destination);
+  gainNode.connect(masterGain);
 
   oscillator.frequency.setValueAtTime(1500, ctx.currentTime);
   oscillator2.frequency.setValueAtTime(2000, ctx.currentTime);
@@ -98,12 +103,12 @@ const playDing = (ctx: AudioContext) => {
   oscillator2.stop(ctx.currentTime + 0.4);
 };
 
-const playSoft = (ctx: AudioContext) => {
+const playSoft = (ctx: AudioContext, masterGain: GainNode) => {
   const oscillator = ctx.createOscillator();
   const gainNode = ctx.createGain();
 
   oscillator.connect(gainNode);
-  gainNode.connect(ctx.destination);
+  gainNode.connect(masterGain);
 
   oscillator.frequency.setValueAtTime(440, ctx.currentTime);
   oscillator.frequency.setValueAtTime(523.25, ctx.currentTime + 0.15);
@@ -122,7 +127,7 @@ const playSoft = (ctx: AudioContext) => {
   oscillator.stop(ctx.currentTime + 0.5);
 };
 
-export const playNotificationSound = (soundType?: SoundType) => {
+export const playNotificationSound = (soundType?: SoundType, volume?: number) => {
   try {
     const ctx = getAudioContext();
     
@@ -131,24 +136,29 @@ export const playNotificationSound = (soundType?: SoundType) => {
       ctx.resume();
     }
 
+    // Create master gain node for volume control
+    const masterGain = ctx.createGain();
+    masterGain.connect(ctx.destination);
+    masterGain.gain.value = volume !== undefined ? volume : getVolume();
+
     const type = soundType || (localStorage.getItem("notificationSoundType") as SoundType) || "chime";
 
     switch (type) {
       case "bell":
-        playBell(ctx);
+        playBell(ctx, masterGain);
         break;
       case "pop":
-        playPop(ctx);
+        playPop(ctx, masterGain);
         break;
       case "ding":
-        playDing(ctx);
+        playDing(ctx, masterGain);
         break;
       case "soft":
-        playSoft(ctx);
+        playSoft(ctx, masterGain);
         break;
       case "chime":
       default:
-        playChime(ctx);
+        playChime(ctx, masterGain);
         break;
     }
   } catch (error) {
