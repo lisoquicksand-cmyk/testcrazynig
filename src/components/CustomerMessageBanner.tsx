@@ -2,8 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, X, Send, MessageCircle, ChevronDown, ChevronUp, Volume2, VolumeX } from "lucide-react";
-import { playNotificationSound } from "@/lib/notificationSound";
+import { Bell, X, Send, MessageCircle, ChevronDown, ChevronUp, Volume2, VolumeX, Music } from "lucide-react";
+import { playNotificationSound, SoundType, soundNames } from "@/lib/notificationSound";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Message {
   id: string;
@@ -32,6 +38,7 @@ const CustomerMessageBanner = () => {
   const [sending, setSending] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [selectedSound, setSelectedSound] = useState<SoundType>("chime");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load customer email and sound preference from localStorage
@@ -44,6 +51,10 @@ const CustomerMessageBanner = () => {
     if (soundPref !== null) {
       setSoundEnabled(soundPref === "true");
     }
+    const soundType = localStorage.getItem("notificationSoundType") as SoundType;
+    if (soundType) {
+      setSelectedSound(soundType);
+    }
   }, []);
 
   const toggleSound = () => {
@@ -52,8 +63,14 @@ const CustomerMessageBanner = () => {
     localStorage.setItem("notificationSound", String(newValue));
     if (newValue) {
       // Play a test sound when enabling
-      playNotificationSound();
+      playNotificationSound(selectedSound);
     }
+  };
+
+  const handleSoundChange = (sound: SoundType) => {
+    setSelectedSound(sound);
+    localStorage.setItem("notificationSoundType", sound);
+    playNotificationSound(sound);
   };
 
   // Fetch orders and check for unread messages
@@ -294,6 +311,31 @@ const CustomerMessageBanner = () => {
                 </>
               )}
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-primary-foreground hover:bg-primary-foreground/20 gap-1"
+                  title="בחר צליל התראה"
+                >
+                  <Music size={16} />
+                  <span className="text-xs hidden sm:inline">{soundNames[selectedSound]}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-card border-border">
+                {(Object.keys(soundNames) as SoundType[]).map((sound) => (
+                  <DropdownMenuItem
+                    key={sound}
+                    onClick={() => handleSoundChange(sound)}
+                    className={selectedSound === sound ? "bg-primary/20" : ""}
+                  >
+                    {soundNames[sound]}
+                    {selectedSound === sound && " ✓"}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               size="sm"
               variant="ghost"
