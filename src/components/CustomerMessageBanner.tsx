@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Bell, X, Send, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { playNotificationSound } from "@/lib/notificationSound";
 
 interface Message {
   id: string;
@@ -122,6 +123,8 @@ const CustomerMessageBanner = () => {
           if (isOurOrder) {
             setUnreadMessages((prev) => [...prev, newMsg]);
             setDismissed(false);
+            // Play notification sound
+            playNotificationSound();
           }
         }
       )
