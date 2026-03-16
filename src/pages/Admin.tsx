@@ -275,7 +275,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="preview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-13 bg-card">
+          <TabsList className="flex flex-wrap w-full bg-card"  >
             <TabsTrigger value="preview">👁️ תצוגה</TabsTrigger>
             <TabsTrigger value="content">✏️ תוכן</TabsTrigger>
             <TabsTrigger value="images">🖼️ תמונות</TabsTrigger>
