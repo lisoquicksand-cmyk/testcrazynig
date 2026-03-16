@@ -275,7 +275,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="preview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-12 bg-card">
+          <TabsList className="grid w-full grid-cols-13 bg-card">
             <TabsTrigger value="preview">👁️ תצוגה</TabsTrigger>
             <TabsTrigger value="content">✏️ תוכן</TabsTrigger>
             <TabsTrigger value="images">🖼️ תמונות</TabsTrigger>
@@ -286,6 +286,7 @@ const Admin = () => {
             <TabsTrigger value="orders">📦 הזמנות</TabsTrigger>
             <TabsTrigger value="course-orders">🎓 הזמנות קורסים</TabsTrigger>
             <TabsTrigger value="promo-codes">🏷️ קופונים</TabsTrigger>
+            <TabsTrigger value="testimonials">💬 המלצות</TabsTrigger>
             <TabsTrigger value="background">🎨 רקע</TabsTrigger>
             <TabsTrigger value="settings">⚙️ הגדרות</TabsTrigger>
           </TabsList>
