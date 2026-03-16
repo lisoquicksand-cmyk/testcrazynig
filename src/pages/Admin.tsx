@@ -21,6 +21,7 @@ import CourseOrdersTab from "@/components/admin/CourseOrdersTab";
 import RulesTab from "@/components/admin/RulesTab";
 import CoursesTab from "@/components/admin/CoursesTab";
 import PromoCodesTab from "@/components/admin/PromoCodesTab";
+import TestimonialsTab from "@/components/admin/TestimonialsTab";
 import CustomCursor from "@/components/CustomCursor";
 
 // Preset backgrounds
@@ -274,7 +275,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="preview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-12 bg-card">
+          <TabsList className="grid w-full grid-cols-13 bg-card">
             <TabsTrigger value="preview">👁️ תצוגה</TabsTrigger>
             <TabsTrigger value="content">✏️ תוכן</TabsTrigger>
             <TabsTrigger value="images">🖼️ תמונות</TabsTrigger>
@@ -285,6 +286,7 @@ const Admin = () => {
             <TabsTrigger value="orders">📦 הזמנות</TabsTrigger>
             <TabsTrigger value="course-orders">🎓 הזמנות קורסים</TabsTrigger>
             <TabsTrigger value="promo-codes">🏷️ קופונים</TabsTrigger>
+            <TabsTrigger value="testimonials">💬 המלצות</TabsTrigger>
             <TabsTrigger value="background">🎨 רקע</TabsTrigger>
             <TabsTrigger value="settings">⚙️ הגדרות</TabsTrigger>
           </TabsList>
@@ -865,6 +867,11 @@ const Admin = () => {
                 </Button>
               </div>
             </div>
+          </TabsContent>
+
+          {/* Testimonials Tab */}
+          <TabsContent value="testimonials">
+            <TestimonialsTab />
           </TabsContent>
 
           {/* Settings Tab */}
