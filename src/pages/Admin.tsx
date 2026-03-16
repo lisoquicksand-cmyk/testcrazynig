@@ -21,6 +21,7 @@ import CourseOrdersTab from "@/components/admin/CourseOrdersTab";
 import RulesTab from "@/components/admin/RulesTab";
 import CoursesTab from "@/components/admin/CoursesTab";
 import PromoCodesTab from "@/components/admin/PromoCodesTab";
+import TestimonialsTab from "@/components/admin/TestimonialsTab";
 import CustomCursor from "@/components/CustomCursor";
 
 // Preset backgrounds
