@@ -7,6 +7,7 @@ import VideoSection from "@/components/VideoSection";
 import ContactSection from "@/components/ContactSection";
 import RulesSection from "@/components/RulesSection";
 import CourseSection from "@/components/CourseSection";
+import TestimonialsSection from "@/components/TestimonialsSection";
 import PricingSection from "@/components/PricingSection";
 import CustomCursor from "@/components/CustomCursor";
 import CustomerMessageBanner from "@/components/CustomerMessageBanner";
