@@ -869,6 +869,11 @@ const Admin = () => {
             </div>
           </TabsContent>
 
+          {/* Testimonials Tab */}
+          <TabsContent value="testimonials">
+            <TestimonialsTab />
+          </TabsContent>
+
           {/* Settings Tab */}
           <TabsContent value="settings">
             <SettingsTab />

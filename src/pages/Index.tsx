@@ -91,6 +91,9 @@ const Index = () => {
           <CourseSection />
         </div>
         <div className="section-animate">
+          <TestimonialsSection />
+        </div>
+        <div className="section-animate">
           <PricingSection />
         </div>
         
