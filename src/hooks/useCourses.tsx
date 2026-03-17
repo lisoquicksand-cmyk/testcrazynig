@@ -75,9 +75,12 @@ export const useCourses = () => {
 
   const updateCourse = async (id: string, updates: Partial<Course>) => {
     try {
+      const { syllabus, ...rest } = updates as any;
+      const payload: any = { ...rest, updated_at: new Date().toISOString() };
+      if (syllabus !== undefined) payload.syllabus = syllabus;
       const { error } = await supabase
         .from("courses")
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update(payload)
         .eq("id", id);
 
       if (!error) {
