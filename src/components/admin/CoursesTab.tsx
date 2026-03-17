@@ -74,6 +74,10 @@ const CoursesTab = () => {
       description: course.description || "",
       price: course.price,
       button_text: course.button_text,
+      video_url: course.video_url || "",
+      instructor_name: course.instructor_name || "",
+      instructor_image: course.instructor_image || "",
+      full_description: course.full_description || "",
     });
   };
 
