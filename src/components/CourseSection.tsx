@@ -1,29 +1,23 @@
-import { useState } from "react";
-import { useCourses, Course } from "@/hooks/useCourses";
+import { useCourses } from "@/hooks/useCourses";
 import { useSiteContent } from "@/hooks/useSiteContent";
 import { useDiscount } from "@/hooks/useDiscount";
+import { useNavigate } from "react-router-dom";
 import { GraduationCap, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import CourseCheckoutDialog from "@/components/CourseCheckoutDialog";
 import CountdownTimer from "./CountdownTimer";
 
 const CourseSection = () => {
   const { courses, loading } = useCourses();
   const { content } = useSiteContent();
   const { discounts, isCourseDiscountActive, calculateCourseDiscount } = useDiscount();
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const navigate = useNavigate();
 
   const activeCourses = courses.filter((c) => c.is_active);
   const discount = discounts.courses;
   const hasActiveDiscount = isCourseDiscountActive();
 
-  const handleCourseClick = (course: Course, discountedPrice: number) => {
-    setSelectedCourse({
-      ...course,
-      price: discountedPrice
-    });
-    setCheckoutOpen(true);
+  const handleCourseClick = (courseId: string) => {
+    navigate(`/course/${courseId}`);
   };
 
   if (loading) {
@@ -118,7 +112,7 @@ const CourseSection = () => {
 
                     <Button 
                       className="w-full py-3 font-bold"
-                      onClick={() => handleCourseClick(course, showDiscount ? Math.round(discountedPrice) : course.price)}
+                      onClick={() => handleCourseClick(course.id)}
                     >
                       {course.button_text}
                     </Button>
@@ -136,12 +130,6 @@ const CourseSection = () => {
           </div>
         )}
       </div>
-
-      <CourseCheckoutDialog
-        open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
-        selectedCourse={selectedCourse}
-      />
     </section>
   );
 };

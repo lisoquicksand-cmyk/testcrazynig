@@ -20,6 +20,11 @@ const CoursesTab = () => {
     button_text: "הרשמה לקורס",
     is_active: true,
     display_order: 0,
+    video_url: "",
+    instructor_name: "",
+    instructor_image: "",
+    full_description: "",
+    syllabus: [] as any[],
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -46,6 +51,11 @@ const CoursesTab = () => {
         button_text: "הרשמה לקורס",
         is_active: true,
         display_order: 0,
+        video_url: "",
+        instructor_name: "",
+        instructor_image: "",
+        full_description: "",
+        syllabus: [],
       });
     }
   };
@@ -64,6 +74,10 @@ const CoursesTab = () => {
       description: course.description || "",
       price: course.price,
       button_text: course.button_text,
+      video_url: course.video_url || "",
+      instructor_name: course.instructor_name || "",
+      instructor_image: course.instructor_image || "",
+      full_description: course.full_description || "",
     });
   };
 
@@ -138,13 +152,59 @@ const CoursesTab = () => {
               id="courseButton"
               value={newCourse.button_text}
               onChange={(e) =>
-                setNewCourse((prev) => ({
-                  ...prev,
-                  button_text: e.target.value,
-                }))
+                setNewCourse((prev) => ({ ...prev, button_text: e.target.value }))
               }
               placeholder="הרשמה לקורס"
               className="bg-background/50"
+            />
+          </div>
+          <div>
+            <Label htmlFor="courseVideo">קישור לסרטון (YouTube)</Label>
+            <Input
+              id="courseVideo"
+              value={newCourse.video_url}
+              onChange={(e) =>
+                setNewCourse((prev) => ({ ...prev, video_url: e.target.value }))
+              }
+              placeholder="https://www.youtube.com/watch?v=..."
+              className="bg-background/50"
+            />
+          </div>
+          <div>
+            <Label htmlFor="courseInstructor">שם המרצה</Label>
+            <Input
+              id="courseInstructor"
+              value={newCourse.instructor_name}
+              onChange={(e) =>
+                setNewCourse((prev) => ({ ...prev, instructor_name: e.target.value }))
+              }
+              placeholder="שם המרצה"
+              className="bg-background/50"
+            />
+          </div>
+          <div>
+            <Label htmlFor="courseInstructorImage">תמונת מרצה (URL)</Label>
+            <Input
+              id="courseInstructorImage"
+              value={newCourse.instructor_image}
+              onChange={(e) =>
+                setNewCourse((prev) => ({ ...prev, instructor_image: e.target.value }))
+              }
+              placeholder="https://..."
+              className="bg-background/50"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Label htmlFor="courseFullDesc">תיאור מלא (עמוד הקורס)</Label>
+            <Textarea
+              id="courseFullDesc"
+              value={newCourse.full_description}
+              onChange={(e) =>
+                setNewCourse((prev) => ({ ...prev, full_description: e.target.value }))
+              }
+              placeholder="תיאור מפורט שיוצג בעמוד הקורס..."
+              className="bg-background/50"
+              rows={4}
             />
           </div>
           <div className="flex items-end">
@@ -203,6 +263,41 @@ const CoursesTab = () => {
                       className="bg-background/50"
                     />
                   </div>
+                  <Input
+                    value={(editData as any).video_url || ""}
+                    onChange={(e) =>
+                      setEditData((prev) => ({ ...prev, video_url: e.target.value }))
+                    }
+                    placeholder="קישור לסרטון YouTube"
+                    className="bg-background/50"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      value={(editData as any).instructor_name || ""}
+                      onChange={(e) =>
+                        setEditData((prev) => ({ ...prev, instructor_name: e.target.value }))
+                      }
+                      placeholder="שם המרצה"
+                      className="bg-background/50"
+                    />
+                    <Input
+                      value={(editData as any).instructor_image || ""}
+                      onChange={(e) =>
+                        setEditData((prev) => ({ ...prev, instructor_image: e.target.value }))
+                      }
+                      placeholder="תמונת מרצה (URL)"
+                      className="bg-background/50"
+                    />
+                  </div>
+                  <Textarea
+                    value={(editData as any).full_description || ""}
+                    onChange={(e) =>
+                      setEditData((prev) => ({ ...prev, full_description: e.target.value }))
+                    }
+                    placeholder="תיאור מלא לעמוד הקורס"
+                    className="bg-background/50"
+                    rows={3}
+                  />
                   <div className="flex gap-2">
                     <Button onClick={saveEdit} size="sm">
                       <Save size={16} className="ml-1" />

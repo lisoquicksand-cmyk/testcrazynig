@@ -1,17 +1,33 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface CourseSyllabus {
+  title: string;
+  items: string[];
+}
+
 export interface Course {
   id: string;
   title: string;
   description: string | null;
+  full_description: string | null;
   price: number;
   currency: string;
   button_text: string;
   is_active: boolean;
   display_order: number;
+  video_url: string | null;
+  instructor_name: string | null;
+  instructor_image: string | null;
+  syllabus: CourseSyllabus[] | null;
   created_at: string;
 }
+
+// Helper to cast DB rows
+const toCourse = (row: any): Course => ({
+  ...row,
+  syllabus: Array.isArray(row.syllabus) ? row.syllabus : [],
+});
 
 export const useCourses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -29,7 +45,7 @@ export const useCourses = () => {
         .order("display_order", { ascending: true });
 
       if (data && !error) {
-        setCourses(data as Course[]);
+        setCourses(data.map(toCourse));
       }
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -38,16 +54,16 @@ export const useCourses = () => {
     }
   };
 
-  const addCourse = async (course: Omit<Course, "id" | "created_at">) => {
+  const addCourse = async (course: Record<string, any>) => {
     try {
       const { data, error } = await supabase
         .from("courses")
-        .insert([course])
+        .insert([course as any])
         .select()
         .single();
 
       if (data && !error) {
-        setCourses((prev) => [...prev, data as Course]);
+        setCourses((prev) => [...prev, toCourse(data)]);
         return true;
       }
       return false;
@@ -59,9 +75,12 @@ export const useCourses = () => {
 
   const updateCourse = async (id: string, updates: Partial<Course>) => {
     try {
+      const { syllabus, ...rest } = updates as any;
+      const payload: any = { ...rest, updated_at: new Date().toISOString() };
+      if (syllabus !== undefined) payload.syllabus = syllabus;
       const { error } = await supabase
         .from("courses")
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update(payload)
         .eq("id", id);
 
       if (!error) {

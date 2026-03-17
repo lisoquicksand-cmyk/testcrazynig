@@ -65,11 +65,16 @@ export type Database = {
           currency: string
           description: string | null
           display_order: number
+          full_description: string | null
           id: string
+          instructor_image: string | null
+          instructor_name: string | null
           is_active: boolean
           price: number
+          syllabus: Json | null
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           button_text?: string
@@ -77,11 +82,16 @@ export type Database = {
           currency?: string
           description?: string | null
           display_order?: number
+          full_description?: string | null
           id?: string
+          instructor_image?: string | null
+          instructor_name?: string | null
           is_active?: boolean
           price?: number
+          syllabus?: Json | null
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           button_text?: string
@@ -89,11 +99,16 @@ export type Database = {
           currency?: string
           description?: string | null
           display_order?: number
+          full_description?: string | null
           id?: string
+          instructor_image?: string | null
+          instructor_name?: string | null
           is_active?: boolean
           price?: number
+          syllabus?: Json | null
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }

@@ -8,6 +8,7 @@ import heroLogoDefault from "@/assets/hero-logo.png";
 import { useSiteContent } from "@/hooks/useSiteContent";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
+import CoursePage from "./pages/CoursePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/course/:id" element={<CoursePage />} />
             <Route path="/admin" element={<Admin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
