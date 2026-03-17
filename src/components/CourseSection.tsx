@@ -112,7 +112,7 @@ const CourseSection = () => {
 
                     <Button 
                       className="w-full py-3 font-bold"
-                      onClick={() => handleCourseClick(course, showDiscount ? Math.round(discountedPrice) : course.price)}
+                      onClick={() => handleCourseClick(course.id)}
                     >
                       {course.button_text}
                     </Button>
@@ -130,12 +130,6 @@ const CourseSection = () => {
           </div>
         )}
       </div>
-
-      <CourseCheckoutDialog
-        open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
-        selectedCourse={selectedCourse}
-      />
     </section>
   );
 };

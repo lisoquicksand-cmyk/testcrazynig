@@ -23,6 +23,12 @@ export interface Course {
   created_at: string;
 }
 
+// Helper to cast DB rows
+const toCourse = (row: any): Course => ({
+  ...row,
+  syllabus: Array.isArray(row.syllabus) ? row.syllabus : [],
+});
+
 export const useCourses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
