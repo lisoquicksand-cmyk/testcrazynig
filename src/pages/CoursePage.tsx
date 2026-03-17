@@ -315,8 +315,8 @@ const CoursePage = () => {
 
             {isSuccess ? (
               <div className="py-8 text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
-                  <CheckCircle className="w-10 h-10 text-green-500" />
+                <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-10 h-10 text-emerald-500" />
                 </div>
                 <div>
                   <p className="font-bold text-lg">תודה על ההרשמה!</p>
