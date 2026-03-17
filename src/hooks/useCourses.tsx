@@ -54,16 +54,16 @@ export const useCourses = () => {
     }
   };
 
-  const addCourse = async (course: Omit<Course, "id" | "created_at">) => {
+  const addCourse = async (course: Record<string, any>) => {
     try {
       const { data, error } = await supabase
         .from("courses")
-        .insert([course])
+        .insert([course as any])
         .select()
         .single();
 
       if (data && !error) {
-        setCourses((prev) => [...prev, data as Course]);
+        setCourses((prev) => [...prev, toCourse(data)]);
         return true;
       }
       return false;
