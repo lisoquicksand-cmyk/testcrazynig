@@ -152,13 +152,59 @@ const CoursesTab = () => {
               id="courseButton"
               value={newCourse.button_text}
               onChange={(e) =>
-                setNewCourse((prev) => ({
-                  ...prev,
-                  button_text: e.target.value,
-                }))
+                setNewCourse((prev) => ({ ...prev, button_text: e.target.value }))
               }
               placeholder="הרשמה לקורס"
               className="bg-background/50"
+            />
+          </div>
+          <div>
+            <Label htmlFor="courseVideo">קישור לסרטון (YouTube)</Label>
+            <Input
+              id="courseVideo"
+              value={newCourse.video_url}
+              onChange={(e) =>
+                setNewCourse((prev) => ({ ...prev, video_url: e.target.value }))
+              }
+              placeholder="https://www.youtube.com/watch?v=..."
+              className="bg-background/50"
+            />
+          </div>
+          <div>
+            <Label htmlFor="courseInstructor">שם המרצה</Label>
+            <Input
+              id="courseInstructor"
+              value={newCourse.instructor_name}
+              onChange={(e) =>
+                setNewCourse((prev) => ({ ...prev, instructor_name: e.target.value }))
+              }
+              placeholder="שם המרצה"
+              className="bg-background/50"
+            />
+          </div>
+          <div>
+            <Label htmlFor="courseInstructorImage">תמונת מרצה (URL)</Label>
+            <Input
+              id="courseInstructorImage"
+              value={newCourse.instructor_image}
+              onChange={(e) =>
+                setNewCourse((prev) => ({ ...prev, instructor_image: e.target.value }))
+              }
+              placeholder="https://..."
+              className="bg-background/50"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Label htmlFor="courseFullDesc">תיאור מלא (עמוד הקורס)</Label>
+            <Textarea
+              id="courseFullDesc"
+              value={newCourse.full_description}
+              onChange={(e) =>
+                setNewCourse((prev) => ({ ...prev, full_description: e.target.value }))
+              }
+              placeholder="תיאור מפורט שיוצג בעמוד הקורס..."
+              className="bg-background/50"
+              rows={4}
             />
           </div>
           <div className="flex items-end">
