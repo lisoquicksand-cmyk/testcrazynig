@@ -20,6 +20,11 @@ const CoursesTab = () => {
     button_text: "הרשמה לקורס",
     is_active: true,
     display_order: 0,
+    video_url: "",
+    instructor_name: "",
+    instructor_image: "",
+    full_description: "",
+    syllabus: [] as any[],
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
