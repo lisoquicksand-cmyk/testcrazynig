@@ -1,15 +1,25 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface CourseSyllabus {
+  title: string;
+  items: string[];
+}
+
 export interface Course {
   id: string;
   title: string;
   description: string | null;
+  full_description: string | null;
   price: number;
   currency: string;
   button_text: string;
   is_active: boolean;
   display_order: number;
+  video_url: string | null;
+  instructor_name: string | null;
+  instructor_image: string | null;
+  syllabus: CourseSyllabus[] | null;
   created_at: string;
 }
 

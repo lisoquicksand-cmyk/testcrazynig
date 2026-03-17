@@ -1,10 +1,9 @@
-import { useState } from "react";
-import { useCourses, Course } from "@/hooks/useCourses";
+import { useCourses } from "@/hooks/useCourses";
 import { useSiteContent } from "@/hooks/useSiteContent";
 import { useDiscount } from "@/hooks/useDiscount";
+import { useNavigate } from "react-router-dom";
 import { GraduationCap, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import CourseCheckoutDialog from "@/components/CourseCheckoutDialog";
 import CountdownTimer from "./CountdownTimer";
 
 const CourseSection = () => {
