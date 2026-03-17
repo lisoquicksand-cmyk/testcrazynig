@@ -10,19 +10,14 @@ const CourseSection = () => {
   const { courses, loading } = useCourses();
   const { content } = useSiteContent();
   const { discounts, isCourseDiscountActive, calculateCourseDiscount } = useDiscount();
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const navigate = useNavigate();
 
   const activeCourses = courses.filter((c) => c.is_active);
   const discount = discounts.courses;
   const hasActiveDiscount = isCourseDiscountActive();
 
-  const handleCourseClick = (course: Course, discountedPrice: number) => {
-    setSelectedCourse({
-      ...course,
-      price: discountedPrice
-    });
-    setCheckoutOpen(true);
+  const handleCourseClick = (courseId: string) => {
+    navigate(`/course/${courseId}`);
   };
 
   if (loading) {
