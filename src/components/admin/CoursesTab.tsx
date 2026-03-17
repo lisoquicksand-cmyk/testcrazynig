@@ -263,6 +263,41 @@ const CoursesTab = () => {
                       className="bg-background/50"
                     />
                   </div>
+                  <Input
+                    value={(editData as any).video_url || ""}
+                    onChange={(e) =>
+                      setEditData((prev) => ({ ...prev, video_url: e.target.value }))
+                    }
+                    placeholder="קישור לסרטון YouTube"
+                    className="bg-background/50"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      value={(editData as any).instructor_name || ""}
+                      onChange={(e) =>
+                        setEditData((prev) => ({ ...prev, instructor_name: e.target.value }))
+                      }
+                      placeholder="שם המרצה"
+                      className="bg-background/50"
+                    />
+                    <Input
+                      value={(editData as any).instructor_image || ""}
+                      onChange={(e) =>
+                        setEditData((prev) => ({ ...prev, instructor_image: e.target.value }))
+                      }
+                      placeholder="תמונת מרצה (URL)"
+                      className="bg-background/50"
+                    />
+                  </div>
+                  <Textarea
+                    value={(editData as any).full_description || ""}
+                    onChange={(e) =>
+                      setEditData((prev) => ({ ...prev, full_description: e.target.value }))
+                    }
+                    placeholder="תיאור מלא לעמוד הקורס"
+                    className="bg-background/50"
+                    rows={3}
+                  />
                   <div className="flex gap-2">
                     <Button onClick={saveEdit} size="sm">
                       <Save size={16} className="ml-1" />
