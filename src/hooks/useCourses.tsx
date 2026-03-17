@@ -45,7 +45,7 @@ export const useCourses = () => {
         .order("display_order", { ascending: true });
 
       if (data && !error) {
-        setCourses(data as Course[]);
+        setCourses(data.map(toCourse));
       }
     } catch (error) {
       console.error("Error fetching courses:", error);
