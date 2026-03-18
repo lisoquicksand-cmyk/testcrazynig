@@ -1,6 +1,17 @@
 import { useUpdates } from "@/hooks/useUpdates";
 import { useSiteContent } from "@/hooks/useSiteContent";
 import { Bell, Calendar } from "lucide-react";
+import { motion } from "framer-motion";
+
+const container = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.12 } },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 120, damping: 14 } },
+};
 
 const UpdatesSection = () => {
   const { updates, loading } = useUpdates();
@@ -21,18 +32,29 @@ const UpdatesSection = () => {
   return (
     <section id="updates" className="py-16 px-4">
       <div className="max-w-6xl mx-auto">
-        <h2
+        <motion.h2
           className="section-title mb-8"
           style={{ fontFamily: `'${content.fontFamily}', sans-serif` }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.5 }}
         >
           📢 עדכונים
-        </h2>
+        </motion.h2>
 
         {activeUpdates.length > 0 ? (
-          <div className="space-y-4">
+          <motion.div
+            className="space-y-4"
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-50px" }}
+          >
             {activeUpdates.map((update) => (
-              <div
+              <motion.div
                 key={update.id}
+                variants={item}
                 className="minecraft-card flex items-start gap-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/10"
               >
                 <div className="p-3 rounded-xl bg-primary/20 text-primary shrink-0 mt-1">
@@ -56,16 +78,22 @@ const UpdatesSection = () => {
                     </span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : (
-          <div className="minecraft-card text-center py-12">
+          <motion.div
+            className="minecraft-card text-center py-12"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+          >
             <Bell className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground">
               אין עדכונים כרגע. הוסף עדכונים דרך פאנל הניהול!
             </p>
-          </div>
+          </motion.div>
         )}
       </div>
     </section>
