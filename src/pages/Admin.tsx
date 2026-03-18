@@ -287,6 +287,7 @@ const Admin = () => {
             <TabsTrigger value="course-orders">🎓 הזמנות קורסים</TabsTrigger>
             <TabsTrigger value="promo-codes">🏷️ קופונים</TabsTrigger>
             <TabsTrigger value="testimonials">💬 המלצות</TabsTrigger>
+            <TabsTrigger value="updates">📢 עדכונים</TabsTrigger>
             <TabsTrigger value="background">🎨 רקע</TabsTrigger>
             <TabsTrigger value="settings">⚙️ הגדרות</TabsTrigger>
           </TabsList>
