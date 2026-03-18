@@ -14,6 +14,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "בית", icon: <Home size={18} />, href: "#home" },
   { label: "מידע עלי", icon: <User size={18} />, href: "#about" },
+  { label: "עדכונים", icon: <Bell size={18} />, href: "#updates" },
   { label: "דוגמאות סרטונים", icon: <Video size={18} />, href: "#videos" },
   { label: "דוגמאות שורטס", icon: <Film size={18} />, href: "#shorts" },
   { label: "תקשורת", icon: <MessageCircle size={18} />, href: "#contact" },
