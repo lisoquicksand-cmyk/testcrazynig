@@ -68,9 +68,7 @@
   }
 
   #courses,
-  #courses *,
-  .course-page,
-  .course-page * {
+  #courses * {
     cursor: auto !important;
   }
 
