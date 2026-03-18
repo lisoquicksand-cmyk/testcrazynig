@@ -9,6 +9,7 @@ import RulesSection from "@/components/RulesSection";
 import CourseSection from "@/components/CourseSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import PricingSection from "@/components/PricingSection";
+import UpdatesSection from "@/components/UpdatesSection";
 import CustomCursor from "@/components/CustomCursor";
 import CustomerMessageBanner from "@/components/CustomerMessageBanner";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
