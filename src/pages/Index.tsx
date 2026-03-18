@@ -77,6 +77,9 @@ const Index = () => {
           <WelcomeSection />
         </div>
         <div className="section-animate">
+          <UpdatesSection />
+        </div>
+        <div className="section-animate">
           <VideoSection />
         </div>
         <div className="section-animate">
