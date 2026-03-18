@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import CustomCursor from "@/components/CustomCursor";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Course, CourseSyllabus } from "@/hooks/useCourses";
