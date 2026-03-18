@@ -22,6 +22,7 @@ import RulesTab from "@/components/admin/RulesTab";
 import CoursesTab from "@/components/admin/CoursesTab";
 import PromoCodesTab from "@/components/admin/PromoCodesTab";
 import TestimonialsTab from "@/components/admin/TestimonialsTab";
+import UpdatesTab from "@/components/admin/UpdatesTab";
 import CustomCursor from "@/components/CustomCursor";
 
 // Preset backgrounds
@@ -287,6 +288,7 @@ const Admin = () => {
             <TabsTrigger value="course-orders">🎓 הזמנות קורסים</TabsTrigger>
             <TabsTrigger value="promo-codes">🏷️ קופונים</TabsTrigger>
             <TabsTrigger value="testimonials">💬 המלצות</TabsTrigger>
+            <TabsTrigger value="updates">📢 עדכונים</TabsTrigger>
             <TabsTrigger value="background">🎨 רקע</TabsTrigger>
             <TabsTrigger value="settings">⚙️ הגדרות</TabsTrigger>
           </TabsList>
@@ -872,6 +874,11 @@ const Admin = () => {
           {/* Testimonials Tab */}
           <TabsContent value="testimonials">
             <TestimonialsTab />
+          </TabsContent>
+
+          {/* Updates Tab */}
+          <TabsContent value="updates">
+            <UpdatesTab />
           </TabsContent>
 
           {/* Settings Tab */}

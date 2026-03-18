@@ -67,6 +67,11 @@
     cursor: none !important;
   }
 
+  #courses,
+  #courses * {
+    cursor: auto !important;
+  }
+
   html {
     direction: rtl;
   }
