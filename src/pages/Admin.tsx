@@ -44,7 +44,7 @@ const Admin = () => {
 
   // Hooks
   const { videos, addVideo, updateVideo, deleteVideo } = useVideos();
-  const { packages, addPackage, updatePackage, deletePackage } = usePricing();
+  const { packages } = usePricing();
   const { background, updateBackground, uploadBackgroundImage } = useSiteSettings();
   const { verifyPassword } = useAdminPassword();
 
