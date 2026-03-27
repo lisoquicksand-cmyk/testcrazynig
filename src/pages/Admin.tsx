@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useVideos, Video } from "@/hooks/useVideos";
-import { usePricing, PricingPackage } from "@/hooks/usePricing";
+import { usePricing } from "@/hooks/usePricing";
 import { useSiteSettings, BackgroundSettings } from "@/hooks/useSiteSettings";
 import { useAdminPassword } from "@/hooks/useAdminPassword";
 import { supabase } from "@/integrations/supabase/client";
