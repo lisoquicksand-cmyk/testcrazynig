@@ -659,7 +659,10 @@ const Admin = () => {
                   </div>
                 )}
 
-                <Button onClick={handleUpdateBackground} className="w-full">
+                <Button onClick={async () => {
+                  const success = await updateBackground(bgSettings);
+                  if (success) toast({ title: "הרקע עודכן בהצלחה!" });
+                }} className="w-full">
                   <Save className="ml-2" size={18} />
                   שמור שינויים
                 </Button>
