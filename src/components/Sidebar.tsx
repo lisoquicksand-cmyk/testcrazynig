@@ -16,7 +16,7 @@ const navItems: NavItem[] = [
   { label: "מידע עלי", icon: <User size={18} />, href: "#about" },
   { label: "עדכונים", icon: <Bell size={18} />, href: "#updates" },
   { label: "דוגמאות סרטונים", icon: <Video size={18} />, href: "#videos" },
-  { label: "דוגמאות שורטס", icon: <Film size={18} />, href: "#shorts" },
+  
   { label: "תקשורת", icon: <MessageCircle size={18} />, href: "#contact" },
   { label: "חוקים", icon: <ScrollText size={18} />, href: "#rules" },
   { label: "קורסים", icon: <GraduationCap size={18} />, href: "#courses" },
