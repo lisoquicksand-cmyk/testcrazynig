@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, X, Home, User, Video, Film, MessageCircle, CreditCard, Settings, ScrollText, GraduationCap, Bell } from "lucide-react";
+import { Menu, X, Home, User, Video, MessageCircle, CreditCard, ScrollText, GraduationCap, Bell, Star, Settings } from "lucide-react";
 import heroLogoDefault from "@/assets/hero-logo.png";
 import { useSiteContent } from "@/hooks/useSiteContent";
 import { useAdminReveal } from "@/hooks/useAdminReveal";
@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
   
   { label: "תקשורת", icon: <MessageCircle size={18} />, href: "#contact" },
   { label: "חוקים", icon: <ScrollText size={18} />, href: "#rules" },
+  { label: "המלצות", icon: <Star size={18} />, href: "#testimonials" },
   { label: "קורסים", icon: <GraduationCap size={18} />, href: "#courses" },
   { label: "תשלום", icon: <CreditCard size={18} />, href: "#payment" },
 ];
