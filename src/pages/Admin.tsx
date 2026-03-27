@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useVideos, Video } from "@/hooks/useVideos";
-import { usePricing, PricingPackage } from "@/hooks/usePricing";
+import { usePricing } from "@/hooks/usePricing";
 import { useSiteSettings, BackgroundSettings } from "@/hooks/useSiteSettings";
 import { useAdminPassword } from "@/hooks/useAdminPassword";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ import CoursesTab from "@/components/admin/CoursesTab";
 import PromoCodesTab from "@/components/admin/PromoCodesTab";
 import TestimonialsTab from "@/components/admin/TestimonialsTab";
 import UpdatesTab from "@/components/admin/UpdatesTab";
+import PricingTab from "@/components/admin/PricingTab";
 import CustomCursor from "@/components/CustomCursor";
 
 // Preset backgrounds
@@ -43,7 +44,7 @@ const Admin = () => {
 
   // Hooks
   const { videos, addVideo, updateVideo, deleteVideo } = useVideos();
-  const { packages, addPackage, updatePackage, deletePackage } = usePricing();
+  const { packages } = usePricing();
   const { background, updateBackground, uploadBackgroundImage } = useSiteSettings();
   const { verifyPassword } = useAdminPassword();
 
@@ -61,18 +62,6 @@ const Admin = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-
-  const [newPackage, setNewPackage] = useState({
-    name: "",
-    description: "",
-    price: 0,
-    currency: "ILS",
-    features: [] as string[],
-    is_popular: false,
-    is_active: true,
-    display_order: 0,
-  });
-  const [newFeature, setNewFeature] = useState("");
 
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(background);
   const [uploadingBg, setUploadingBg] = useState(false);
@@ -170,60 +159,6 @@ const Admin = () => {
     toast({ title: "סרטון נבחר! לחץ על 'הוסף סרטון' להוספה" });
   };
 
-  const handleAddPackage = async () => {
-    if (!newPackage.name || newPackage.price <= 0) {
-      toast({ title: "נא למלא שם ומחיר", variant: "destructive" });
-      return;
-    }
-    const success = await addPackage({
-      ...newPackage,
-      display_order: packages.length,
-    });
-    if (success) {
-      toast({ title: "החבילה נוספה בהצלחה!" });
-      setNewPackage({
-        name: "",
-        description: "",
-        price: 0,
-        currency: "ILS",
-        features: [],
-        is_popular: false,
-        is_active: true,
-        display_order: 0,
-      });
-    }
-  };
-
-  const handleDeletePackage = async (id: string) => {
-    const success = await deletePackage(id);
-    if (success) {
-      toast({ title: "החבילה נמחקה בהצלחה!" });
-    }
-  };
-
-  const handleUpdateBackground = async () => {
-    const success = await updateBackground(bgSettings);
-    if (success) {
-      toast({ title: "הרקע עודכן בהצלחה!" });
-    }
-  };
-
-  const addFeatureToPackage = () => {
-    if (newFeature.trim()) {
-      setNewPackage((prev) => ({
-        ...prev,
-        features: [...prev.features, newFeature.trim()],
-      }));
-      setNewFeature("");
-    }
-  };
-
-  const removeFeature = (index: number) => {
-    setNewPackage((prev) => ({
-      ...prev,
-      features: prev.features.filter((_, i) => i !== index),
-    }));
-  };
 
   if (!isLoggedIn) {
     return (
@@ -484,147 +419,8 @@ const Admin = () => {
           </TabsContent>
 
           {/* Pricing Tab */}
-          <TabsContent value="pricing" className="space-y-6">
-            <div className="minecraft-card">
-              <h2 className="text-xl font-bold mb-4">הוסף חבילה חדשה</h2>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="pkgName">שם החבילה</Label>
-                  <Input
-                    id="pkgName"
-                    value={newPackage.name}
-                    onChange={(e) =>
-                      setNewPackage((prev) => ({ ...prev, name: e.target.value }))
-                    }
-                    placeholder="בסיסי / מקצועי..."
-                    className="bg-background/50"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pkgPrice">מחיר (₪)</Label>
-                  <Input
-                    id="pkgPrice"
-                    type="number"
-                    value={newPackage.price}
-                    onChange={(e) =>
-                      setNewPackage((prev) => ({
-                        ...prev,
-                        price: Number(e.target.value),
-                      }))
-                    }
-                    className="bg-background/50"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="pkgDesc">תיאור</Label>
-                  <Textarea
-                    id="pkgDesc"
-                    value={newPackage.description || ""}
-                    onChange={(e) =>
-                      setNewPackage((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    placeholder="תיאור קצר של החבילה..."
-                    className="bg-background/50"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>תכונות</Label>
-                  <div className="flex gap-2 mb-2">
-                    <Input
-                      value={newFeature}
-                      onChange={(e) => setNewFeature(e.target.value)}
-                      placeholder="הוסף תכונה..."
-                      className="bg-background/50"
-                      onKeyDown={(e) => e.key === "Enter" && addFeatureToPackage()}
-                    />
-                    <Button onClick={addFeatureToPackage} variant="secondary">
-                      <Plus size={18} />
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {newPackage.features.map((feature, index) => (
-                      <span
-                        key={index}
-                        className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                      >
-                        {feature}
-                        <button onClick={() => removeFeature(index)}>
-                          <X size={14} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Label htmlFor="pkgPopular" className="flex items-center gap-2">
-                    <Switch
-                      id="pkgPopular"
-                      checked={newPackage.is_popular}
-                      onCheckedChange={(checked) =>
-                        setNewPackage((prev) => ({ ...prev, is_popular: checked }))
-                      }
-                    />
-                    הכי פופולרי
-                  </Label>
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={handleAddPackage} className="w-full">
-                    <Plus className="ml-2" size={18} />
-                    הוסף חבילה
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="minecraft-card">
-              <h2 className="text-xl font-bold mb-4">חבילות קיימות ({packages.length})</h2>
-              <div className="space-y-3">
-                {packages.map((pkg) => (
-                  <div
-                    key={pkg.id}
-                    className="flex items-center justify-between p-4 bg-muted/30 rounded-lg"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold">{pkg.name}</p>
-                        {pkg.is_popular && (
-                          <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-xs">
-                            פופולרי
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-primary font-bold">₪{pkg.price}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {pkg.features.length} תכונות
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={pkg.is_active}
-                        onCheckedChange={(checked) =>
-                          updatePackage(pkg.id, { is_active: checked })
-                        }
-                      />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleDeletePackage(pkg.id)}
-                      >
-                        <Trash2 size={18} />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {packages.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">
-                    אין חבילות עדיין. הוסף את החבילה הראשונה!
-                  </p>
-                )}
-              </div>
-            </div>
+          <TabsContent value="pricing">
+            <PricingTab />
           </TabsContent>
 
           {/* Courses Tab */}
@@ -863,7 +659,10 @@ const Admin = () => {
                   </div>
                 )}
 
-                <Button onClick={handleUpdateBackground} className="w-full">
+                <Button onClick={async () => {
+                  const success = await updateBackground(bgSettings);
+                  if (success) toast({ title: "הרקע עודכן בהצלחה!" });
+                }} className="w-full">
                   <Save className="ml-2" size={18} />
                   שמור שינויים
                 </Button>
