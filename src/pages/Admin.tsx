@@ -63,18 +63,6 @@ const Admin = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  const [newPackage, setNewPackage] = useState({
-    name: "",
-    description: "",
-    price: 0,
-    currency: "ILS",
-    features: [] as string[],
-    is_popular: false,
-    is_active: true,
-    display_order: 0,
-  });
-  const [newFeature, setNewFeature] = useState("");
-
   const [bgSettings, setBgSettings] = useState<BackgroundSettings>(background);
   const [uploadingBg, setUploadingBg] = useState(false);
   const bgFileInputRef = useRef<HTMLInputElement>(null);
