@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
   
   { label: "תקשורת", icon: <MessageCircle size={18} />, href: "#contact" },
   { label: "חוקים", icon: <ScrollText size={18} />, href: "#rules" },
+  { label: "המלצות", icon: <Star size={18} />, href: "#testimonials" },
   { label: "קורסים", icon: <GraduationCap size={18} />, href: "#courses" },
   { label: "תשלום", icon: <CreditCard size={18} />, href: "#payment" },
 ];
