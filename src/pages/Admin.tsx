@@ -159,60 +159,6 @@ const Admin = () => {
     toast({ title: "סרטון נבחר! לחץ על 'הוסף סרטון' להוספה" });
   };
 
-  const handleAddPackage = async () => {
-    if (!newPackage.name || newPackage.price <= 0) {
-      toast({ title: "נא למלא שם ומחיר", variant: "destructive" });
-      return;
-    }
-    const success = await addPackage({
-      ...newPackage,
-      display_order: packages.length,
-    });
-    if (success) {
-      toast({ title: "החבילה נוספה בהצלחה!" });
-      setNewPackage({
-        name: "",
-        description: "",
-        price: 0,
-        currency: "ILS",
-        features: [],
-        is_popular: false,
-        is_active: true,
-        display_order: 0,
-      });
-    }
-  };
-
-  const handleDeletePackage = async (id: string) => {
-    const success = await deletePackage(id);
-    if (success) {
-      toast({ title: "החבילה נמחקה בהצלחה!" });
-    }
-  };
-
-  const handleUpdateBackground = async () => {
-    const success = await updateBackground(bgSettings);
-    if (success) {
-      toast({ title: "הרקע עודכן בהצלחה!" });
-    }
-  };
-
-  const addFeatureToPackage = () => {
-    if (newFeature.trim()) {
-      setNewPackage((prev) => ({
-        ...prev,
-        features: [...prev.features, newFeature.trim()],
-      }));
-      setNewFeature("");
-    }
-  };
-
-  const removeFeature = (index: number) => {
-    setNewPackage((prev) => ({
-      ...prev,
-      features: prev.features.filter((_, i) => i !== index),
-    }));
-  };
 
   if (!isLoggedIn) {
     return (
