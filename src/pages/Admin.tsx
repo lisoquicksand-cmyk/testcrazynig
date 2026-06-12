@@ -271,6 +271,7 @@ const Admin = () => {
             <TabsTrigger value="testimonials">💬 המלצות</TabsTrigger>
             <TabsTrigger value="updates">📢 עדכונים</TabsTrigger>
             <TabsTrigger value="background">🎨 רקע</TabsTrigger>
+            <TabsTrigger value="login-logs">🛡️ יומן כניסות</TabsTrigger>
             <TabsTrigger value="settings">⚙️ הגדרות</TabsTrigger>
           </TabsList>
 
