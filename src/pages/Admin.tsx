@@ -217,7 +217,17 @@ const Admin = () => {
                 className="bg-background/50"
               />
             </div>
-            <Button onClick={handleLogin} disabled={loggingIn} className="w-full">
+            {lockoutInfo.locked && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-center">
+                🔒 חסום זמנית. נסה שוב בעוד {Math.ceil(lockoutInfo.remainingMs / 60000)} דקות.
+              </div>
+            )}
+            {!lockoutInfo.locked && lockoutInfo.attemptsLeft < 5 && (
+              <p className="text-xs text-muted-foreground text-center">
+                נשארו {lockoutInfo.attemptsLeft} ניסיונות
+              </p>
+            )}
+            <Button onClick={handleLogin} disabled={loggingIn || lockoutInfo.locked} className="w-full">
               {loggingIn ? "מתחבר..." : "התחבר"}
             </Button>
             <Button
