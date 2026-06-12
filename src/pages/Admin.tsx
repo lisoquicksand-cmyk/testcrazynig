@@ -24,7 +24,9 @@ import PromoCodesTab from "@/components/admin/PromoCodesTab";
 import TestimonialsTab from "@/components/admin/TestimonialsTab";
 import UpdatesTab from "@/components/admin/UpdatesTab";
 import PricingTab from "@/components/admin/PricingTab";
+import LoginLogsTab from "@/components/admin/LoginLogsTab";
 import CustomCursor from "@/components/CustomCursor";
+import { getLockoutInfo, logLoginAttempt, recordFailure, recordSuccess } from "@/hooks/useLoginAttempts";
 
 // Preset backgrounds
 const presetBackgrounds = [
@@ -41,6 +43,7 @@ const Admin = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [password, setPassword] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
+  const [lockoutInfo, setLockoutInfo] = useState(() => getLockoutInfo());
 
   // Hooks
   const { videos, addVideo, updateVideo, deleteVideo } = useVideos();
@@ -87,13 +90,46 @@ const Admin = () => {
   };
 
   const handleLogin = async () => {
+    const info = getLockoutInfo();
+    if (info.locked) {
+      const minutes = Math.ceil(info.remainingMs / 60000);
+      toast({
+        title: "חסום זמנית",
+        description: `יותר מדי ניסיונות כושלים. נסה שוב בעוד ${minutes} דקות.`,
+        variant: "destructive",
+      });
+      setLockoutInfo(info);
+      await logLoginAttempt(false, "locked_out");
+      return;
+    }
+
     setLoggingIn(true);
     const isValid = await verifyPassword(password);
     if (isValid) {
+      recordSuccess();
+      setLockoutInfo(getLockoutInfo());
+      await logLoginAttempt(true);
       setIsLoggedIn(true);
       toast({ title: "התחברת בהצלחה!" });
     } else {
-      toast({ title: "סיסמה שגויה", variant: "destructive" });
+      recordFailure();
+      const newInfo = getLockoutInfo();
+      setLockoutInfo(newInfo);
+      await logLoginAttempt(false, "wrong_password");
+      if (newInfo.locked) {
+        const minutes = Math.ceil(newInfo.remainingMs / 60000);
+        toast({
+          title: "חסום זמנית",
+          description: `הגעת למקסימום ניסיונות. נסה שוב בעוד ${minutes} דקות.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "סיסמה שגויה",
+          description: `נשארו ${newInfo.attemptsLeft} ניסיונות`,
+          variant: "destructive",
+        });
+      }
     }
     setLoggingIn(false);
   };
@@ -181,7 +217,17 @@ const Admin = () => {
                 className="bg-background/50"
               />
             </div>
-            <Button onClick={handleLogin} disabled={loggingIn} className="w-full">
+            {lockoutInfo.locked && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-center">
+                🔒 חסום זמנית. נסה שוב בעוד {Math.ceil(lockoutInfo.remainingMs / 60000)} דקות.
+              </div>
+            )}
+            {!lockoutInfo.locked && lockoutInfo.attemptsLeft < 5 && (
+              <p className="text-xs text-muted-foreground text-center">
+                נשארו {lockoutInfo.attemptsLeft} ניסיונות
+              </p>
+            )}
+            <Button onClick={handleLogin} disabled={loggingIn || lockoutInfo.locked} className="w-full">
               {loggingIn ? "מתחבר..." : "התחבר"}
             </Button>
             <Button
@@ -225,6 +271,7 @@ const Admin = () => {
             <TabsTrigger value="testimonials">💬 המלצות</TabsTrigger>
             <TabsTrigger value="updates">📢 עדכונים</TabsTrigger>
             <TabsTrigger value="background">🎨 רקע</TabsTrigger>
+            <TabsTrigger value="login-logs">🛡️ יומן כניסות</TabsTrigger>
             <TabsTrigger value="settings">⚙️ הגדרות</TabsTrigger>
           </TabsList>
 
@@ -678,6 +725,11 @@ const Admin = () => {
           {/* Updates Tab */}
           <TabsContent value="updates">
             <UpdatesTab />
+          </TabsContent>
+
+          {/* Login Logs Tab */}
+          <TabsContent value="login-logs">
+            <LoginLogsTab />
           </TabsContent>
 
           {/* Settings Tab */}
