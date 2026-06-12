@@ -89,13 +89,20 @@ const Admin = () => {
     setUploadingBg(false);
   };
 
+  const formatRetryTime = (remainingMs: number) => {
+    const when = new Date(Date.now() + remainingMs);
+    const timeStr = when.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+    const minutes = Math.ceil(remainingMs / 60000);
+    return { timeStr, minutes };
+  };
+
   const handleLogin = async () => {
     const info = getLockoutInfo();
     if (info.locked) {
-      const minutes = Math.ceil(info.remainingMs / 60000);
+      const { timeStr, minutes } = formatRetryTime(info.remainingMs);
       toast({
         title: "חסום זמנית",
-        description: `יותר מדי ניסיונות כושלים. נסה שוב בעוד ${minutes} דקות.`,
+        description: `יותר מדי ניסיונות כושלים. נסה שוב בעוד ${minutes} דקות (בשעה ${timeStr}).`,
         variant: "destructive",
       });
       setLockoutInfo(info);
@@ -111,16 +118,25 @@ const Admin = () => {
       await logLoginAttempt(true);
       setIsLoggedIn(true);
       toast({ title: "התחברת בהצלחה!" });
+      // Send email notification ONLY on successful login
+      supabase.functions
+        .invoke("send-admin-login-notification", {
+          body: {
+            eventType: "admin_login_success",
+            userAgent: navigator.userAgent,
+          },
+        })
+        .catch((err) => console.error("Failed to send login notification email", err));
     } else {
       recordFailure();
       const newInfo = getLockoutInfo();
       setLockoutInfo(newInfo);
       await logLoginAttempt(false, "wrong_password");
       if (newInfo.locked) {
-        const minutes = Math.ceil(newInfo.remainingMs / 60000);
+        const { timeStr, minutes } = formatRetryTime(newInfo.remainingMs);
         toast({
           title: "חסום זמנית",
-          description: `הגעת למקסימום ניסיונות. נסה שוב בעוד ${minutes} דקות.`,
+          description: `הגעת למקסימום ניסיונות. נסה שוב בעוד ${minutes} דקות (בשעה ${timeStr}).`,
           variant: "destructive",
         });
       } else {
