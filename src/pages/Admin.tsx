@@ -90,13 +90,46 @@ const Admin = () => {
   };
 
   const handleLogin = async () => {
+    const info = getLockoutInfo();
+    if (info.locked) {
+      const minutes = Math.ceil(info.remainingMs / 60000);
+      toast({
+        title: "חסום זמנית",
+        description: `יותר מדי ניסיונות כושלים. נסה שוב בעוד ${minutes} דקות.`,
+        variant: "destructive",
+      });
+      setLockoutInfo(info);
+      await logLoginAttempt(false, "locked_out");
+      return;
+    }
+
     setLoggingIn(true);
     const isValid = await verifyPassword(password);
     if (isValid) {
+      recordSuccess();
+      setLockoutInfo(getLockoutInfo());
+      await logLoginAttempt(true);
       setIsLoggedIn(true);
       toast({ title: "התחברת בהצלחה!" });
     } else {
-      toast({ title: "סיסמה שגויה", variant: "destructive" });
+      recordFailure();
+      const newInfo = getLockoutInfo();
+      setLockoutInfo(newInfo);
+      await logLoginAttempt(false, "wrong_password");
+      if (newInfo.locked) {
+        const minutes = Math.ceil(newInfo.remainingMs / 60000);
+        toast({
+          title: "חסום זמנית",
+          description: `הגעת למקסימום ניסיונות. נסה שוב בעוד ${minutes} דקות.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "סיסמה שגויה",
+          description: `נשארו ${newInfo.attemptsLeft} ניסיונות`,
+          variant: "destructive",
+        });
+      }
     }
     setLoggingIn(false);
   };
