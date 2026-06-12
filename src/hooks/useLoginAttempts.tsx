@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "admin_login_attempts_v1";
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = 1;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 
