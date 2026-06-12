@@ -222,7 +222,7 @@ const Admin = () => {
                 🔒 חסום זמנית. נסה שוב בעוד {Math.ceil(lockoutInfo.remainingMs / 60000)} דקות.
               </div>
             )}
-            {!lockoutInfo.locked && lockoutInfo.attemptsLeft < 5 && (
+            {!lockoutInfo.locked && lockoutInfo.attemptsLeft < 1 && (
               <p className="text-xs text-muted-foreground text-center">
                 נשארו {lockoutInfo.attemptsLeft} ניסיונות
               </p>
