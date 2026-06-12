@@ -235,7 +235,8 @@ const Admin = () => {
             </div>
             {lockoutInfo.locked && (
               <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-center">
-                🔒 חסום זמנית. נסה שוב בעוד {Math.ceil(lockoutInfo.remainingMs / 60000)} דקות.
+                🔒 חסום זמנית. נסה שוב בעוד {Math.ceil(lockoutInfo.remainingMs / 60000)} דקות
+                {" "}(בשעה {new Date(Date.now() + lockoutInfo.remainingMs).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}).
               </div>
             )}
             {!lockoutInfo.locked && lockoutInfo.attemptsLeft < 1 && (
