@@ -43,6 +43,7 @@ const Admin = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [password, setPassword] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
+  const [lockoutInfo, setLockoutInfo] = useState(() => getLockoutInfo());
 
   // Hooks
   const { videos, addVideo, updateVideo, deleteVideo } = useVideos();
