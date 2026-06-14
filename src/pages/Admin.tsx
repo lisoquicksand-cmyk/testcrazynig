@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useVideos, Video } from "@/hooks/useVideos";
 import { usePricing } from "@/hooks/usePricing";
 import { useSiteSettings, BackgroundSettings } from "@/hooks/useSiteSettings";
-import { useAdminPassword } from "@/hooks/useAdminPassword";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Plus, Trash2, Edit2, Save, X, Home, Upload, Image as ImageIcon, Check, Search, Loader2 } from "lucide-react";
 import ContentTab from "@/components/admin/ContentTab";
@@ -40,16 +40,28 @@ const presetBackgrounds = [
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { loading: authLoading, isAdmin, signIn, signOut } = useAdminAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
   const [lockoutInfo, setLockoutInfo] = useState(() => getLockoutInfo());
+
+  // Bootstrap state (only matters when no admin exists yet)
+  const [needsBootstrap, setNeedsBootstrap] = useState<boolean | null>(null);
+  const [bootstrapEmail, setBootstrapEmail] = useState("");
+  const [bootstrapPassword, setBootstrapPassword] = useState("");
+  const [bootstrapping, setBootstrapping] = useState(false);
+
+  useEffect(() => {
+    supabase.functions.invoke("bootstrap-admin", { method: "GET" })
+      .then(({ data }) => setNeedsBootstrap(!!data?.needs_bootstrap))
+      .catch(() => setNeedsBootstrap(false));
+  }, []);
 
   // Hooks
   const { videos, addVideo, updateVideo, deleteVideo } = useVideos();
   const { packages } = usePricing();
   const { background, updateBackground, uploadBackgroundImage } = useSiteSettings();
-  const { verifyPassword } = useAdminPassword();
 
   // Form states
   const [newVideo, setNewVideo] = useState({
@@ -110,29 +122,28 @@ const Admin = () => {
       return;
     }
 
+    if (!email.trim() || !password) {
+      toast({ title: "נא למלא אימייל וסיסמה", variant: "destructive" });
+      return;
+    }
+
     setLoggingIn(true);
-    const isValid = await verifyPassword(password);
-    if (isValid) {
+    const result = await signIn(email, password);
+    if (result.ok) {
       recordSuccess();
       setLockoutInfo(getLockoutInfo());
       await logLoginAttempt(true);
-      try { sessionStorage.setItem("admin_pw", password); } catch {}
-      setIsLoggedIn(true);
       toast({ title: "התחברת בהצלחה!" });
-      // Send email notification ONLY on successful login
       supabase.functions
         .invoke("send-admin-login-notification", {
-          body: {
-            eventType: "admin_login_success",
-            userAgent: navigator.userAgent,
-          },
+          body: { eventType: "admin_login_success", userAgent: navigator.userAgent },
         })
         .catch((err) => console.error("Failed to send login notification email", err));
     } else {
       recordFailure();
       const newInfo = getLockoutInfo();
       setLockoutInfo(newInfo);
-      await logLoginAttempt(false, "wrong_password");
+      await logLoginAttempt(false, result.error || "wrong_credentials");
       if (newInfo.locked) {
         const { timeStr, minutes } = formatRetryTime(newInfo.remainingMs);
         toast({
@@ -142,13 +153,34 @@ const Admin = () => {
         });
       } else {
         toast({
-          title: "סיסמה שגויה",
+          title: result.error || "פרטי התחברות שגויים",
           description: `נשארו ${newInfo.attemptsLeft} ניסיונות`,
           variant: "destructive",
         });
       }
     }
     setLoggingIn(false);
+  };
+
+  const handleBootstrap = async () => {
+    if (!bootstrapEmail.trim() || bootstrapPassword.length < 8) {
+      toast({ title: "אימייל וסיסמה (לפחות 8 תווים) נדרשים", variant: "destructive" });
+      return;
+    }
+    setBootstrapping(true);
+    const { data, error } = await supabase.functions.invoke("bootstrap-admin", {
+      body: { email: bootstrapEmail, password: bootstrapPassword },
+    });
+    if (error || data?.error) {
+      toast({ title: data?.error || error?.message || "שגיאה ביצירת אדמין", variant: "destructive" });
+      setBootstrapping(false);
+      return;
+    }
+    toast({ title: "האדמין נוצר! אפשר להתחבר עכשיו." });
+    setEmail(bootstrapEmail);
+    setPassword(bootstrapPassword);
+    setNeedsBootstrap(false);
+    setBootstrapping(false);
   };
 
   const handleAddVideo = async () => {
