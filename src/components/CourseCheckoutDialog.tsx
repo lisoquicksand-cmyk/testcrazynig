@@ -70,23 +70,20 @@ const CourseCheckoutDialog = ({ open, onOpenChange, selectedCourse }: CourseChec
 
     setIsSubmitting(true);
 
-    const { error } = await supabase.from("course_orders").insert({
-      course_id: selectedCourse.id,
-      course_name: selectedCourse.title,
-      price: finalPrice,
-      discord_name: trimmedDiscord,
-      email: trimmedEmail,
-      status: "pending",
+    const { data, error } = await supabase.functions.invoke("place-order", {
+      body: {
+        type: "course",
+        id: selectedCourse.id,
+        discord_name: trimmedDiscord,
+        email: trimmedEmail,
+        promo_code: appliedPromoCode || undefined,
+      },
     });
-
-    if (!error && appliedPromoCode) {
-      await usePromoCode(appliedPromoCode);
-    }
 
     setIsSubmitting(false);
 
-    if (error) {
-      console.error("Course order error:", error);
+    if (error || !data?.ok) {
+      console.error("Course order error:", error || data);
       toast({ title: "שגיאה בשליחת ההזמנה", variant: "destructive" });
     } else {
       // Save email to localStorage for message notifications
