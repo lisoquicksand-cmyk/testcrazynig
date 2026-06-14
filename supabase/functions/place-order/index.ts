@@ -30,6 +30,15 @@ Deno.serve(async (req) => {
       auth: { persistSession: false },
     });
 
+    // DDoS / abuse protection: per-IP and per-email rate limits.
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const { data: ipOk } = await supabase.rpc('check_rate_limit', {
+      _bucket: `place-order:ip:${ip}`,
+      _max_hits: 20,
+      _window_seconds: 300,
+    });
+    if (ipOk === false) return json({ error: 'rate_limited' }, 429);
+
     const body = await req.json().catch(() => ({}));
     const type = body.type;
     const id = body.id;
@@ -50,6 +59,14 @@ Deno.serve(async (req) => {
     if (!EMAIL_RE.test(email) || email.length > 255) {
       return json({ error: 'invalid_email' }, 400);
     }
+
+    const { data: emailOk } = await supabase.rpc('check_rate_limit', {
+      _bucket: `place-order:email:${email.toLowerCase()}`,
+      _max_hits: 5,
+      _window_seconds: 600,
+    });
+    if (emailOk === false) return json({ error: 'rate_limited' }, 429);
+
 
     // Lookup canonical price
     let basePrice = 0;
