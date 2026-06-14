@@ -216,10 +216,8 @@ const Admin = () => {
     }
     setIsSearching(true);
     try {
-      const adminPw = sessionStorage.getItem("admin_pw") || "";
       const { data, error } = await supabase.functions.invoke('youtube-search', {
         body: { query: searchQuery, maxResults: 6 },
-        headers: { 'x-admin-password': adminPw },
       });
       if (error) throw error;
       setSearchResults(data.videos || []);
@@ -247,54 +245,114 @@ const Admin = () => {
   };
 
 
-  if (!isLoggedIn) {
+  if (authLoading || needsBootstrap === null) {
+    return (
+      <div className="min-h-screen cosmic-bg flex items-center justify-center p-4">
+        <CustomCursor />
+        <Loader2 className="animate-spin text-primary" size={40} />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
     return (
       <div className="min-h-screen cosmic-bg flex items-center justify-center p-4">
         <CustomCursor />
         <div className="minecraft-card w-full max-w-md">
-          <h1 className="text-2xl font-bold text-center mb-6 text-primary">
-            🔐 כניסת מנהל
-          </h1>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="password">סיסמה</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                placeholder="הזן סיסמה..."
-                className="bg-background/50"
-              />
-            </div>
-            {lockoutInfo.locked && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-center">
-                🔒 חסום זמנית. נסה שוב בעוד {Math.ceil(lockoutInfo.remainingMs / 60000)} דקות
-                {" "}(בשעה {new Date(Date.now() + lockoutInfo.remainingMs).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}).
-              </div>
-            )}
-            {!lockoutInfo.locked && lockoutInfo.attemptsLeft < 1 && (
-              <p className="text-xs text-muted-foreground text-center">
-                נשארו {lockoutInfo.attemptsLeft} ניסיונות
+          {needsBootstrap ? (
+            <>
+              <h1 className="text-2xl font-bold text-center mb-2 text-primary">
+                🚀 הגדרת אדמין ראשוני
+              </h1>
+              <p className="text-sm text-muted-foreground text-center mb-6">
+                עוד לא קיים חשבון אדמין. צור עכשיו את האדמין הראשון של האתר.
               </p>
-            )}
-            <Button onClick={handleLogin} disabled={loggingIn || lockoutInfo.locked} className="w-full">
-              {loggingIn ? "מתחבר..." : "התחבר"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/")}
-              className="w-full"
-            >
-              <Home className="ml-2" size={18} />
-              חזרה לאתר
-            </Button>
-          </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="bsEmail">אימייל</Label>
+                  <Input
+                    id="bsEmail"
+                    type="email"
+                    value={bootstrapEmail}
+                    onChange={(e) => setBootstrapEmail(e.target.value)}
+                    placeholder="admin@example.com"
+                    className="bg-background/50"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bsPassword">סיסמה (לפחות 8 תווים)</Label>
+                  <Input
+                    id="bsPassword"
+                    type="password"
+                    value={bootstrapPassword}
+                    onChange={(e) => setBootstrapPassword(e.target.value)}
+                    placeholder="סיסמה חזקה..."
+                    className="bg-background/50"
+                  />
+                </div>
+                <Button onClick={handleBootstrap} disabled={bootstrapping} className="w-full">
+                  {bootstrapping ? "יוצר..." : "צור אדמין"}
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/")} className="w-full">
+                  <Home className="ml-2" size={18} />חזרה לאתר
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-center mb-6 text-primary">
+                🔐 כניסת מנהל
+              </h1>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="email">אימייל</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                    placeholder="admin@example.com"
+                    className="bg-background/50"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password">סיסמה</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                    placeholder="הזן סיסמה..."
+                    className="bg-background/50"
+                  />
+                </div>
+                {lockoutInfo.locked && (
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-center">
+                    🔒 חסום זמנית. נסה שוב בעוד {Math.ceil(lockoutInfo.remainingMs / 60000)} דקות
+                    {" "}(בשעה {new Date(Date.now() + lockoutInfo.remainingMs).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}).
+                  </div>
+                )}
+                {!lockoutInfo.locked && lockoutInfo.attemptsLeft < 1 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    נשארו {lockoutInfo.attemptsLeft} ניסיונות
+                  </p>
+                )}
+                <Button onClick={handleLogin} disabled={loggingIn || lockoutInfo.locked} className="w-full">
+                  {loggingIn ? "מתחבר..." : "התחבר"}
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/")} className="w-full">
+                  <Home className="ml-2" size={18} />חזרה לאתר
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen cosmic-bg p-4 md:p-8">
