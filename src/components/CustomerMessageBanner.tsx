@@ -87,102 +87,44 @@ const CustomerMessageBanner = () => {
     playNotificationSound(selectedSound, volume);
   };
 
-  // Fetch orders and check for unread messages
+  // Fetch orders + unread messages via customer-portal edge function.
   useEffect(() => {
     if (!customerEmail) return;
+    let cancelled = false;
 
     const fetchOrdersAndMessages = async () => {
-      // Fetch orders for this email
-      const [ordersRes, courseOrdersRes] = await Promise.all([
-        supabase
-          .from("orders")
-          .select("id, package_name")
-          .eq("email", customerEmail),
-        supabase
-          .from("course_orders")
-          .select("id, course_name")
-          .eq("email", customerEmail),
-      ]);
+      const { data: ordersData } = await supabase.functions.invoke("customer-portal", {
+        body: { action: "list_orders", email: customerEmail },
+      });
+      if (cancelled || !ordersData) return;
+      const found: OrderInfo[] = [
+        ...((ordersData.orders || []) as any[]).map((o: any) => ({ id: o.id, type: "package" as const, name: o.name })),
+        ...((ordersData.course_orders || []) as any[]).map((o: any) => ({ id: o.id, type: "course" as const, name: o.name })),
+      ];
+      setOrders(found);
 
-      const foundOrders: OrderInfo[] = [];
-      const orderIds: string[] = [];
-      const courseOrderIds: string[] = [];
-
-      if (ordersRes.data) {
-        ordersRes.data.forEach((o) => {
-          foundOrders.push({ id: o.id, type: "package", name: o.package_name });
-          orderIds.push(o.id);
-        });
-      }
-
-      if (courseOrdersRes.data) {
-        courseOrdersRes.data.forEach((o) => {
-          foundOrders.push({ id: o.id, type: "course", name: o.course_name });
-          courseOrderIds.push(o.id);
-        });
-      }
-
-      setOrders(foundOrders);
-
-      // Fetch unread admin messages for these orders
-      if (orderIds.length > 0 || courseOrderIds.length > 0) {
-        let query = supabase
-          .from("order_messages")
-          .select("*")
-          .eq("sender_type", "admin")
-          .eq("is_read", false);
-
-        if (orderIds.length > 0 && courseOrderIds.length > 0) {
-          query = query.or(`order_id.in.(${orderIds.join(",")}),course_order_id.in.(${courseOrderIds.join(",")})`);
-        } else if (orderIds.length > 0) {
-          query = query.in("order_id", orderIds);
-        } else {
-          query = query.in("course_order_id", courseOrderIds);
+      const { data: unreadData } = await supabase.functions.invoke("customer-portal", {
+        body: { action: "list_unread", email: customerEmail },
+      });
+      if (cancelled || !unreadData) return;
+      const prevIds = new Set(unreadMessages.map((m) => m.id));
+      const incoming: Message[] = unreadData.messages || [];
+      const hasNew = incoming.some((m) => !prevIds.has(m.id));
+      setUnreadMessages(incoming);
+      if (hasNew && unreadMessages.length > 0) {
+        setDismissed(false);
+        const soundPref = localStorage.getItem("notificationSound");
+        if (soundPref !== "false") {
+          playNotificationSound(selectedSound, volume);
         }
-
-        const { data } = await query;
-        setUnreadMessages((data as Message[]) || []);
       }
     };
 
     fetchOrdersAndMessages();
-
-    // Set up realtime subscription for new messages
-    const channel = supabase
-      .channel("customer-messages")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "order_messages",
-          filter: "sender_type=eq.admin",
-        },
-        (payload) => {
-          // Check if this message is for one of our orders
-          const newMsg = payload.new as Message;
-          const isOurOrder = orders.some(
-            (o) =>
-              (o.type === "package" && o.id === newMsg.order_id) ||
-              (o.type === "course" && o.id === newMsg.course_order_id)
-          );
-          if (isOurOrder) {
-            setUnreadMessages((prev) => [...prev, newMsg]);
-            setDismissed(false);
-            // Play notification sound if enabled
-            const soundPref = localStorage.getItem("notificationSound");
-            if (soundPref !== "false") {
-              playNotificationSound();
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [customerEmail, orders.length]);
+    // Poll every 20s instead of relying on realtime
+    const interval = setInterval(fetchOrdersAndMessages, 20_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [customerEmail]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -190,83 +132,56 @@ const CustomerMessageBanner = () => {
 
   const handleSelectOrder = async (order: OrderInfo) => {
     setSelectedOrder(order);
+    if (!customerEmail) return;
+    const { data } = await supabase.functions.invoke("customer-portal", {
+      body: {
+        action: "list_messages",
+        email: customerEmail,
+        order_id: order.id,
+        order_type: order.type,
+      },
+    });
+    const msgs: Message[] = data?.messages || [];
+    setMessages(msgs);
 
-    let query = supabase
-      .from("order_messages")
-      .select("*")
-      .order("created_at", { ascending: true });
-
-    if (order.type === "package") {
-      query = query.eq("order_id", order.id);
-    } else {
-      query = query.eq("course_order_id", order.id);
-    }
-
-    const { data } = await query;
-    setMessages((data as Message[]) || []);
-
-    // Mark admin messages as read
-    const unreadAdminMsgs = ((data as Message[]) || [])
-      .filter((m) => !m.is_read && m.sender_type === "admin")
-      .map((m) => m.id);
-
-    if (unreadAdminMsgs.length > 0) {
-      await supabase
-        .from("order_messages")
-        .update({ is_read: true })
-        .in("id", unreadAdminMsgs);
-
-      setUnreadMessages((prev) =>
-        prev.filter((m) => !unreadAdminMsgs.includes(m.id))
-      );
+    const unreadIds = msgs.filter((m) => !m.is_read && m.sender_type === "admin").map((m) => m.id);
+    if (unreadIds.length) {
+      await supabase.functions.invoke("customer-portal", {
+        body: { action: "mark_read", email: customerEmail, ids: unreadIds },
+      });
+      setUnreadMessages((prev) => prev.filter((m) => !unreadIds.includes(m.id)));
     }
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !selectedOrder) return;
-
+    if (!newMessage.trim() || !selectedOrder || !customerEmail) return;
     setSending(true);
-
-    const insertData: {
-      message: string;
-      sender_type: string;
-      order_id?: string;
-      course_order_id?: string;
-    } = {
-      message: newMessage.trim(),
-      sender_type: "customer",
-    };
-
-    if (selectedOrder.type === "package") {
-      insertData.order_id = selectedOrder.id;
-    } else {
-      insertData.course_order_id = selectedOrder.id;
-    }
-
-    const { data, error } = await supabase
-      .from("order_messages")
-      .insert(insertData)
-      .select()
-      .single();
-
-    if (!error && data) {
-      setMessages((prev) => [...prev, data as Message]);
+    const { data } = await supabase.functions.invoke("customer-portal", {
+      body: {
+        action: "send_message",
+        email: customerEmail,
+        order_id: selectedOrder.id,
+        order_type: selectedOrder.type,
+        message: newMessage.trim(),
+      },
+    });
+    if (data?.message) {
+      setMessages((prev) => [...prev, data.message]);
       setNewMessage("");
     }
-
     setSending(false);
   };
 
   const handleDeleteMessage = async (messageId: string) => {
-    const { error } = await supabase
-      .from("order_messages")
-      .delete()
-      .eq("id", messageId);
-
-    if (!error) {
+    if (!customerEmail) return;
+    const { data } = await supabase.functions.invoke("customer-portal", {
+      body: { action: "delete_message", email: customerEmail, id: messageId },
+    });
+    if (data?.ok) {
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
     }
   };
+
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleString("he-IL", {
