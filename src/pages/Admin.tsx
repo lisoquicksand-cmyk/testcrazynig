@@ -358,13 +358,19 @@ const Admin = () => {
     <div className="min-h-screen cosmic-bg p-4 md:p-8">
       <CustomCursor />
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 gap-2 flex-wrap">
           <h1 className="text-3xl font-bold text-primary">🎛️ פאנל ניהול</h1>
-          <Button variant="outline" onClick={() => navigate("/")}>
-            <Home className="ml-2" size={18} />
-            חזרה לאתר
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => signOut()}>
+              התנתק
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/")}>
+              <Home className="ml-2" size={18} />
+              חזרה לאתר
+            </Button>
+          </div>
         </div>
+
 
         <Tabs defaultValue="preview" className="space-y-6">
           <TabsList className="flex flex-wrap w-full bg-card"  >
