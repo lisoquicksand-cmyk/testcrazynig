@@ -184,8 +184,10 @@ const Admin = () => {
     }
     setIsSearching(true);
     try {
+      const adminPw = sessionStorage.getItem("admin_pw") || "";
       const { data, error } = await supabase.functions.invoke('youtube-search', {
-        body: { query: searchQuery, maxResults: 6 }
+        body: { query: searchQuery, maxResults: 6 },
+        headers: { 'x-admin-password': adminPw },
       });
       if (error) throw error;
       setSearchResults(data.videos || []);
