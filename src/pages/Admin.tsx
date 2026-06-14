@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useVideos, Video } from "@/hooks/useVideos";
 import { usePricing } from "@/hooks/usePricing";
 import { useSiteSettings, BackgroundSettings } from "@/hooks/useSiteSettings";
-import { useAdminPassword } from "@/hooks/useAdminPassword";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Plus, Trash2, Edit2, Save, X, Home, Upload, Image as ImageIcon, Check, Search, Loader2 } from "lucide-react";
 import ContentTab from "@/components/admin/ContentTab";
@@ -40,16 +40,28 @@ const presetBackgrounds = [
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { loading: authLoading, isAdmin, signIn, signOut } = useAdminAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
   const [lockoutInfo, setLockoutInfo] = useState(() => getLockoutInfo());
+
+  // Bootstrap state (only matters when no admin exists yet)
+  const [needsBootstrap, setNeedsBootstrap] = useState<boolean | null>(null);
+  const [bootstrapEmail, setBootstrapEmail] = useState("");
+  const [bootstrapPassword, setBootstrapPassword] = useState("");
+  const [bootstrapping, setBootstrapping] = useState(false);
+
+  useEffect(() => {
+    supabase.functions.invoke("bootstrap-admin", { method: "GET" })
+      .then(({ data }) => setNeedsBootstrap(!!data?.needs_bootstrap))
+      .catch(() => setNeedsBootstrap(false));
+  }, []);
 
   // Hooks
   const { videos, addVideo, updateVideo, deleteVideo } = useVideos();
   const { packages } = usePricing();
   const { background, updateBackground, uploadBackgroundImage } = useSiteSettings();
-  const { verifyPassword } = useAdminPassword();
 
   // Form states
   const [newVideo, setNewVideo] = useState({
@@ -110,29 +122,28 @@ const Admin = () => {
       return;
     }
 
+    if (!email.trim() || !password) {
+      toast({ title: "נא למלא אימייל וסיסמה", variant: "destructive" });
+      return;
+    }
+
     setLoggingIn(true);
-    const isValid = await verifyPassword(password);
-    if (isValid) {
+    const result = await signIn(email, password);
+    if (result.ok) {
       recordSuccess();
       setLockoutInfo(getLockoutInfo());
       await logLoginAttempt(true);
-      try { sessionStorage.setItem("admin_pw", password); } catch {}
-      setIsLoggedIn(true);
       toast({ title: "התחברת בהצלחה!" });
-      // Send email notification ONLY on successful login
       supabase.functions
         .invoke("send-admin-login-notification", {
-          body: {
-            eventType: "admin_login_success",
-            userAgent: navigator.userAgent,
-          },
+          body: { eventType: "admin_login_success", userAgent: navigator.userAgent },
         })
         .catch((err) => console.error("Failed to send login notification email", err));
     } else {
       recordFailure();
       const newInfo = getLockoutInfo();
       setLockoutInfo(newInfo);
-      await logLoginAttempt(false, "wrong_password");
+      await logLoginAttempt(false, result.error || "wrong_credentials");
       if (newInfo.locked) {
         const { timeStr, minutes } = formatRetryTime(newInfo.remainingMs);
         toast({
@@ -142,13 +153,34 @@ const Admin = () => {
         });
       } else {
         toast({
-          title: "סיסמה שגויה",
+          title: result.error || "פרטי התחברות שגויים",
           description: `נשארו ${newInfo.attemptsLeft} ניסיונות`,
           variant: "destructive",
         });
       }
     }
     setLoggingIn(false);
+  };
+
+  const handleBootstrap = async () => {
+    if (!bootstrapEmail.trim() || bootstrapPassword.length < 8) {
+      toast({ title: "אימייל וסיסמה (לפחות 8 תווים) נדרשים", variant: "destructive" });
+      return;
+    }
+    setBootstrapping(true);
+    const { data, error } = await supabase.functions.invoke("bootstrap-admin", {
+      body: { email: bootstrapEmail, password: bootstrapPassword },
+    });
+    if (error || data?.error) {
+      toast({ title: data?.error || error?.message || "שגיאה ביצירת אדמין", variant: "destructive" });
+      setBootstrapping(false);
+      return;
+    }
+    toast({ title: "האדמין נוצר! אפשר להתחבר עכשיו." });
+    setEmail(bootstrapEmail);
+    setPassword(bootstrapPassword);
+    setNeedsBootstrap(false);
+    setBootstrapping(false);
   };
 
   const handleAddVideo = async () => {
@@ -184,10 +216,8 @@ const Admin = () => {
     }
     setIsSearching(true);
     try {
-      const adminPw = sessionStorage.getItem("admin_pw") || "";
       const { data, error } = await supabase.functions.invoke('youtube-search', {
         body: { query: searchQuery, maxResults: 6 },
-        headers: { 'x-admin-password': adminPw },
       });
       if (error) throw error;
       setSearchResults(data.videos || []);
@@ -215,66 +245,132 @@ const Admin = () => {
   };
 
 
-  if (!isLoggedIn) {
+  if (authLoading || needsBootstrap === null) {
+    return (
+      <div className="min-h-screen cosmic-bg flex items-center justify-center p-4">
+        <CustomCursor />
+        <Loader2 className="animate-spin text-primary" size={40} />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
     return (
       <div className="min-h-screen cosmic-bg flex items-center justify-center p-4">
         <CustomCursor />
         <div className="minecraft-card w-full max-w-md">
-          <h1 className="text-2xl font-bold text-center mb-6 text-primary">
-            🔐 כניסת מנהל
-          </h1>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="password">סיסמה</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                placeholder="הזן סיסמה..."
-                className="bg-background/50"
-              />
-            </div>
-            {lockoutInfo.locked && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-center">
-                🔒 חסום זמנית. נסה שוב בעוד {Math.ceil(lockoutInfo.remainingMs / 60000)} דקות
-                {" "}(בשעה {new Date(Date.now() + lockoutInfo.remainingMs).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}).
-              </div>
-            )}
-            {!lockoutInfo.locked && lockoutInfo.attemptsLeft < 1 && (
-              <p className="text-xs text-muted-foreground text-center">
-                נשארו {lockoutInfo.attemptsLeft} ניסיונות
+          {needsBootstrap ? (
+            <>
+              <h1 className="text-2xl font-bold text-center mb-2 text-primary">
+                🚀 הגדרת אדמין ראשוני
+              </h1>
+              <p className="text-sm text-muted-foreground text-center mb-6">
+                עוד לא קיים חשבון אדמין. צור עכשיו את האדמין הראשון של האתר.
               </p>
-            )}
-            <Button onClick={handleLogin} disabled={loggingIn || lockoutInfo.locked} className="w-full">
-              {loggingIn ? "מתחבר..." : "התחבר"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate("/")}
-              className="w-full"
-            >
-              <Home className="ml-2" size={18} />
-              חזרה לאתר
-            </Button>
-          </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="bsEmail">אימייל</Label>
+                  <Input
+                    id="bsEmail"
+                    type="email"
+                    value={bootstrapEmail}
+                    onChange={(e) => setBootstrapEmail(e.target.value)}
+                    placeholder="admin@example.com"
+                    className="bg-background/50"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bsPassword">סיסמה (לפחות 8 תווים)</Label>
+                  <Input
+                    id="bsPassword"
+                    type="password"
+                    value={bootstrapPassword}
+                    onChange={(e) => setBootstrapPassword(e.target.value)}
+                    placeholder="סיסמה חזקה..."
+                    className="bg-background/50"
+                  />
+                </div>
+                <Button onClick={handleBootstrap} disabled={bootstrapping} className="w-full">
+                  {bootstrapping ? "יוצר..." : "צור אדמין"}
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/")} className="w-full">
+                  <Home className="ml-2" size={18} />חזרה לאתר
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-center mb-6 text-primary">
+                🔐 כניסת מנהל
+              </h1>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="email">אימייל</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                    placeholder="admin@example.com"
+                    className="bg-background/50"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password">סיסמה</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                    placeholder="הזן סיסמה..."
+                    className="bg-background/50"
+                  />
+                </div>
+                {lockoutInfo.locked && (
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-center">
+                    🔒 חסום זמנית. נסה שוב בעוד {Math.ceil(lockoutInfo.remainingMs / 60000)} דקות
+                    {" "}(בשעה {new Date(Date.now() + lockoutInfo.remainingMs).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}).
+                  </div>
+                )}
+                {!lockoutInfo.locked && lockoutInfo.attemptsLeft < 1 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    נשארו {lockoutInfo.attemptsLeft} ניסיונות
+                  </p>
+                )}
+                <Button onClick={handleLogin} disabled={loggingIn || lockoutInfo.locked} className="w-full">
+                  {loggingIn ? "מתחבר..." : "התחבר"}
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/")} className="w-full">
+                  <Home className="ml-2" size={18} />חזרה לאתר
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
   }
 
+
   return (
     <div className="min-h-screen cosmic-bg p-4 md:p-8">
       <CustomCursor />
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 gap-2 flex-wrap">
           <h1 className="text-3xl font-bold text-primary">🎛️ פאנל ניהול</h1>
-          <Button variant="outline" onClick={() => navigate("/")}>
-            <Home className="ml-2" size={18} />
-            חזרה לאתר
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => signOut()}>
+              התנתק
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/")}>
+              <Home className="ml-2" size={18} />
+              חזרה לאתר
+            </Button>
+          </div>
         </div>
+
 
         <Tabs defaultValue="preview" className="space-y-6">
           <TabsList className="flex flex-wrap w-full bg-card"  >
