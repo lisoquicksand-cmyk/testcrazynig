@@ -5,13 +5,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { useAdminPassword } from "@/hooks/useAdminPassword";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { useDiscount } from "@/hooks/useDiscount";
 import { Save, Lock, Eye, EyeOff, Percent, Package, GraduationCap, Clock } from "lucide-react";
 
 const SettingsTab = () => {
   const { toast } = useToast();
-  const { changePassword } = useAdminPassword();
+  const { changePassword } = useAdminAuth();
   const { discounts, updateDiscount, loading: discountLoading } = useDiscount();
   
   const [currentPassword, setCurrentPassword] = useState("");
@@ -44,7 +44,7 @@ const SettingsTab = () => {
   }, [discounts, discountLoading]);
 
   const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if (!newPassword || !confirmPassword) {
       toast({ title: "נא למלא את כל השדות", variant: "destructive" });
       return;
     }
@@ -54,14 +54,14 @@ const SettingsTab = () => {
       return;
     }
 
-    if (newPassword.length < 4) {
-      toast({ title: "הסיסמה חייבת להכיל לפחות 4 תווים", variant: "destructive" });
+    if (newPassword.length < 8) {
+      toast({ title: "הסיסמה חייבת להכיל לפחות 8 תווים", variant: "destructive" });
       return;
     }
 
     setSaving(true);
-    const result = await changePassword(currentPassword, newPassword);
-    
+    const result = await changePassword(newPassword);
+
     if (result.success) {
       toast({ title: "הסיסמה שונתה בהצלחה!" });
       setCurrentPassword("");
@@ -302,20 +302,10 @@ const SettingsTab = () => {
       {/* Password Change Section */}
       <div className="minecraft-card">
         <h2 className="text-xl font-bold mb-4">🔐 שינוי סיסמה</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          האימות מתבצע דרך מערכת המשתמשים של Lovable Cloud. הסיסמה החדשה תעודכן לחשבון האדמין המחובר.
+        </p>
         <div className="space-y-4 max-w-md">
-          <div>
-            <Label htmlFor="currentPassword">סיסמה נוכחית</Label>
-            <div className="relative">
-              <Input
-                id="currentPassword"
-                type={showPasswords ? "text" : "password"}
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="הזן סיסמה נוכחית..."
-                className="bg-background/50 pl-10"
-              />
-            </div>
-          </div>
           <div>
             <Label htmlFor="newPassword">סיסמה חדשה</Label>
             <Input
@@ -323,7 +313,7 @@ const SettingsTab = () => {
               type={showPasswords ? "text" : "password"}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="הזן סיסמה חדשה..."
+              placeholder="הזן סיסמה חדשה (לפחות 8 תווים)..."
               className="bg-background/50"
             />
           </div>
@@ -338,7 +328,7 @@ const SettingsTab = () => {
               className="bg-background/50"
             />
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -351,8 +341,8 @@ const SettingsTab = () => {
             </Button>
           </div>
 
-          <Button 
-            onClick={handleChangePassword} 
+          <Button
+            onClick={handleChangePassword}
             disabled={saving}
             className="w-full"
           >
