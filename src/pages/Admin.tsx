@@ -116,6 +116,7 @@ const Admin = () => {
       recordSuccess();
       setLockoutInfo(getLockoutInfo());
       await logLoginAttempt(true);
+      try { sessionStorage.setItem("admin_pw", password); } catch {}
       setIsLoggedIn(true);
       toast({ title: "התחברת בהצלחה!" });
       // Send email notification ONLY on successful login
