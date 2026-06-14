@@ -57,134 +57,69 @@ const CustomerMessagesDialog = ({
 
   const handleSearch = async () => {
     if (!email.trim()) return;
-    
     setSearching(true);
     setOrders([]);
-
-    // Search both orders and course_orders
-    const [ordersRes, courseOrdersRes] = await Promise.all([
-      supabase
-        .from("orders")
-        .select("id, package_name, discord_name, email")
-        .eq("email", email.trim()),
-      supabase
-        .from("course_orders")
-        .select("id, course_name, discord_name, email")
-        .eq("email", email.trim()),
-    ]);
-
-    const foundOrders: OrderInfo[] = [];
-
-    if (ordersRes.data) {
-      ordersRes.data.forEach((o) => {
-        foundOrders.push({
-          id: o.id,
-          type: "package",
-          name: o.package_name,
-          discord_name: o.discord_name,
-          email: o.email,
-        });
-      });
+    const { data, error } = await supabase.functions.invoke("customer-portal", {
+      body: { action: "list_orders", email: email.trim() },
+    });
+    if (error || !data || data.error) {
+      setSearching(false);
+      return;
     }
-
-    if (courseOrdersRes.data) {
-      courseOrdersRes.data.forEach((o) => {
-        foundOrders.push({
-          id: o.id,
-          type: "course",
-          name: o.course_name,
-          discord_name: o.discord_name,
-          email: o.email,
-        });
-      });
-    }
-
-    setOrders(foundOrders);
+    const found: OrderInfo[] = [
+      ...(data.orders || []),
+      ...(data.course_orders || []),
+    ];
+    setOrders(found);
     setSearching(false);
   };
 
   const handleSelectOrder = async (order: OrderInfo) => {
     setSelectedOrder(order);
     setLoadingMessages(true);
-
-    let query = supabase
-      .from("order_messages")
-      .select("*")
-      .order("created_at", { ascending: true });
-
-    if (order.type === "package") {
-      query = query.eq("order_id", order.id);
-    } else {
-      query = query.eq("course_order_id", order.id);
+    const { data } = await supabase.functions.invoke("customer-portal", {
+      body: {
+        action: "list_messages",
+        email: order.email,
+        order_id: order.id,
+        order_type: order.type,
+      },
+    });
+    const msgs: Message[] = data?.messages || [];
+    setMessages(msgs);
+    const unreadIds = msgs.filter((m) => !m.is_read && m.sender_type === "admin").map((m) => m.id);
+    if (unreadIds.length) {
+      supabase.functions.invoke("customer-portal", {
+        body: { action: "mark_read", email: order.email, ids: unreadIds },
+      });
     }
-
-    const { data } = await query;
-
-    setMessages((data as Message[]) || []);
-    
-    // Mark admin messages as read
-    const unreadAdminMessages = ((data as Message[]) || [])
-      .filter((m) => !m.is_read && m.sender_type === "admin")
-      .map((m) => m.id);
-
-    if (unreadAdminMessages.length > 0) {
-      await supabase
-        .from("order_messages")
-        .update({ is_read: true })
-        .in("id", unreadAdminMessages);
-    }
-
     setLoadingMessages(false);
     setStep("messages");
   };
 
   const handleSend = async () => {
     if (!newMessage.trim() || !selectedOrder) return;
-    
     setSending(true);
-
-    const insertData: {
-      message: string;
-      sender_type: string;
-      order_id?: string;
-      course_order_id?: string;
-    } = {
-      message: newMessage.trim(),
-      sender_type: "customer",
-    };
-
-    if (selectedOrder.type === "package") {
-      insertData.order_id = selectedOrder.id;
-    } else {
-      insertData.course_order_id = selectedOrder.id;
-    }
-
-    const { data, error } = await supabase
-      .from("order_messages")
-      .insert(insertData)
-      .select()
-      .single();
-
-    if (!error && data) {
-      setMessages((prev) => [...prev, data as Message]);
+    const { data } = await supabase.functions.invoke("customer-portal", {
+      body: {
+        action: "send_message",
+        email: selectedOrder.email,
+        order_id: selectedOrder.id,
+        order_type: selectedOrder.type,
+        message: newMessage.trim(),
+      },
+    });
+    if (data?.message) {
+      setMessages((prev) => [...prev, data.message]);
       setNewMessage("");
     }
-
     setSending(false);
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString("he-IL", {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
+  const formatTime = (dateString: string) =>
+    new Date(dateString).toLocaleString("he-IL", {
+      day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
     });
-  };
-
-  const hasUnreadFromAdmin = (orderId: string, orderType: "package" | "course") => {
-    return false; // This would need a separate query to check
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,10 +130,9 @@ const CustomerMessagesDialog = ({
             הודעות מ-CrazyEdits
           </DialogTitle>
           <DialogDescription>
-            {step === "search" 
+            {step === "search"
               ? "הזן את האימייל שלך כדי לראות הודעות על ההזמנות שלך"
-              : `הודעות עבור: ${selectedOrder?.name}`
-            }
+              : `הודעות עבור: ${selectedOrder?.name}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -209,31 +143,23 @@ const CustomerMessagesDialog = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="הזן אימייל..."
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSearch();
-                }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
               />
               <Button onClick={handleSearch} disabled={searching || !email.trim()}>
                 <Search size={16} />
               </Button>
             </div>
 
-            {searching && (
-              <p className="text-center text-muted-foreground py-4">מחפש...</p>
-            )}
-
+            {searching && <p className="text-center text-muted-foreground py-4">מחפש...</p>}
             {!searching && orders.length === 0 && email && (
-              <p className="text-center text-muted-foreground py-4">
-                לא נמצאו הזמנות עם האימייל הזה
-              </p>
+              <p className="text-center text-muted-foreground py-4">לא נמצאו הזמנות עם האימייל הזה</p>
             )}
-
             {orders.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">בחר הזמנה:</p>
                 {orders.map((order) => (
                   <Button
-                    key={order.id}
+                    key={`${order.type}-${order.id}`}
                     variant="outline"
                     className="w-full justify-start"
                     onClick={() => handleSelectOrder(order)}
@@ -247,16 +173,10 @@ const CustomerMessagesDialog = ({
           </div>
         ) : (
           <div className="flex flex-col h-[400px]">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="self-start mb-2"
-              onClick={() => setStep("search")}
-            >
+            <Button variant="ghost" size="sm" className="self-start mb-2" onClick={() => setStep("search")}>
               ← חזרה לבחירת הזמנה
             </Button>
 
-            {/* Messages List */}
             <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-muted/30 rounded-lg mb-3">
               {loadingMessages ? (
                 <p className="text-center text-muted-foreground py-4">טוען הודעות...</p>
@@ -267,26 +187,13 @@ const CustomerMessagesDialog = ({
                 </div>
               ) : (
                 messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex ${
-                      msg.sender_type === "customer" ? "justify-start" : "justify-end"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[80%] p-3 rounded-lg ${
-                        msg.sender_type === "customer"
-                          ? "bg-green-500/20 text-foreground"
-                          : "bg-primary/20 text-foreground"
-                      }`}
-                    >
+                  <div key={msg.id} className={`flex ${msg.sender_type === "customer" ? "justify-start" : "justify-end"}`}>
+                    <div className={`max-w-[80%] p-3 rounded-lg ${msg.sender_type === "customer" ? "bg-green-500/20 text-foreground" : "bg-primary/20 text-foreground"}`}>
                       <p className="text-xs font-bold mb-1">
                         {msg.sender_type === "admin" ? "נציג CrazyEdits" : "אתה"}
                       </p>
                       <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatTime(msg.created_at)}
-                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{formatTime(msg.created_at)}</p>
                     </div>
                   </div>
                 ))
@@ -294,7 +201,6 @@ const CustomerMessagesDialog = ({
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Send Message Input */}
             <div className="flex gap-2">
               <Textarea
                 value={newMessage}
@@ -309,11 +215,7 @@ const CustomerMessagesDialog = ({
                   }
                 }}
               />
-              <Button
-                onClick={handleSend}
-                disabled={!newMessage.trim() || sending}
-                className="self-end"
-              >
+              <Button onClick={handleSend} disabled={!newMessage.trim() || sending} className="self-end">
                 <Send size={16} />
               </Button>
             </div>
