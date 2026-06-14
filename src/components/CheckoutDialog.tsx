@@ -70,23 +70,20 @@ const CheckoutDialog = ({ open, onOpenChange, selectedPackage }: CheckoutDialogP
 
     setIsSubmitting(true);
 
-    const { error } = await supabase.from("orders").insert({
-      package_id: selectedPackage.id,
-      package_name: selectedPackage.name,
-      price: finalPrice,
-      discord_name: trimmedDiscord,
-      email: trimmedEmail,
-      status: "pending",
+    const { data, error } = await supabase.functions.invoke("place-order", {
+      body: {
+        type: "package",
+        id: selectedPackage.id,
+        discord_name: trimmedDiscord,
+        email: trimmedEmail,
+        promo_code: appliedPromoCode || undefined,
+      },
     });
-
-    if (!error && appliedPromoCode) {
-      await usePromoCode(appliedPromoCode);
-    }
 
     setIsSubmitting(false);
 
-    if (error) {
-      console.error("Order error:", error);
+    if (error || !data?.ok) {
+      console.error("Order error:", error || data);
       toast({ title: "שגיאה בשליחת ההזמנה", variant: "destructive" });
     } else {
       // Save email to localStorage for message notifications
