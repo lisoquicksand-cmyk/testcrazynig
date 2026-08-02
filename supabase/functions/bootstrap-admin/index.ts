@@ -63,25 +63,53 @@ Deno.serve(async (req) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'invalid_email' }, 400);
   if (password.length < 8) return json({ error: 'weak_password' }, 400);
 
-  // Create user
+  // Create user (or reuse an existing auth user with the same email)
+  let userId: string | null = null;
+
   const { data: created, error: createErr } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
   });
-  if (createErr || !created.user) {
+
+  if (created?.user) {
+    userId = created.user.id;
+  } else {
     console.error('create user error', createErr);
+    // Fall back: the email may already exist in auth — find it and promote it.
+    const { data: list, error: listErr } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 200,
+    });
+    if (listErr) console.error('list users error', listErr);
+    const existing = list?.users?.find((u) => (u.email || '').toLowerCase() === email);
+    if (existing) {
+      // Make sure the password the user just typed actually works.
+      const { error: updErr } = await supabase.auth.admin.updateUserById(existing.id, {
+        password,
+        email_confirm: true,
+      });
+      if (updErr) {
+        console.error('update user error', updErr);
+        return json({ error: updErr.message || 'create_failed' }, 400);
+      }
+      userId = existing.id;
+    }
+  }
+
+  if (!userId) {
     return json({ error: createErr?.message || 'create_failed' }, 400);
   }
 
-  // Assign admin role
+  // Assign admin role (idempotent)
   const { error: roleErr } = await supabase
     .from('user_roles')
-    .insert({ user_id: created.user.id, role: 'admin' });
+    .upsert({ user_id: userId, role: 'admin' }, { onConflict: 'user_id,role' });
   if (roleErr) {
     console.error('role insert error', roleErr);
     return json({ error: 'role_failed' }, 500);
   }
 
-  return json({ ok: true, user_id: created.user.id });
+  return json({ ok: true, user_id: userId });
 });
+
