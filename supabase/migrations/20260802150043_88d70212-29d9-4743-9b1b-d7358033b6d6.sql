@@ -1,0 +1,1 @@
+DELETE FROM public.user_roles WHERE user_id = 'ac37f79a-e223-4960-9ef7-68d534c63176';
