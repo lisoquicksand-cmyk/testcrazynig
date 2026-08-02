@@ -25,8 +25,11 @@ import TestimonialsTab from "@/components/admin/TestimonialsTab";
 import UpdatesTab from "@/components/admin/UpdatesTab";
 import PricingTab from "@/components/admin/PricingTab";
 import LoginLogsTab from "@/components/admin/LoginLogsTab";
+import AuditLogTab from "@/components/admin/AuditLogTab";
 import CustomCursor from "@/components/CustomCursor";
+import { logAuditEvent } from "@/lib/auditLog";
 import { getLockoutInfo, logLoginAttempt, recordFailure, recordSuccess } from "@/hooks/useLoginAttempts";
+
 
 // Preset backgrounds
 const presetBackgrounds = [
@@ -51,12 +54,22 @@ const Admin = () => {
   const [bootstrapEmail, setBootstrapEmail] = useState("");
   const [bootstrapPassword, setBootstrapPassword] = useState("");
   const [bootstrapping, setBootstrapping] = useState(false);
+  const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
+  const [bootstrapError, setBootstrapError] = useState<{
+    message: string;
+    hint: string;
+    status: number;
+    attempts: number;
+    raw?: string;
+  } | null>(null);
 
   useEffect(() => {
     supabase.functions.invoke("bootstrap-admin", { method: "GET" })
       .then(({ data }) => setNeedsBootstrap(!!data?.needs_bootstrap))
       .catch(() => setNeedsBootstrap(false));
+    logAuditEvent("admin_page_access");
   }, []);
+
 
   // Hooks
   const { videos, addVideo, updateVideo, deleteVideo } = useVideos();
@@ -162,26 +175,99 @@ const Admin = () => {
     setLoggingIn(false);
   };
 
+  const bootstrapOnce = async () => {
+    const res = await supabase.functions.invoke("bootstrap-admin", {
+      body: { email: bootstrapEmail.trim(), password: bootstrapPassword },
+    });
+    const rawError = res.error as any;
+    let serverBody: any = res.data;
+    // Non-2xx responses put the body on error.context — read it for the real reason
+    if (rawError?.context?.text) {
+      try {
+        serverBody = JSON.parse(await rawError.context.text());
+      } catch {
+        /* keep as-is */
+      }
+    }
+    const status = rawError?.context?.status ?? (res.error ? 400 : 200);
+    const errMsg = serverBody?.error || rawError?.message || null;
+    return { ok: !errMsg && !res.error, status, errMsg, serverBody };
+  };
+
+  const friendlyBootstrapHint = (status: number, errMsg: string | null) => {
+    const m = (errMsg || "").toLowerCase();
+    if (m.includes("already") || m.includes("exists") || m.includes("registered"))
+      return "כבר קיים משתמש עם האימייל הזה — נסה להתחבר עם הסיסמה הזו במקום ליצור חשבון חדש.";
+    if (m.includes("pwned") || m.includes("leaked") || m.includes("weak"))
+      return "הסיסמה נחשבת חלשה או דלופה. בחר סיסמה ארוכה וייחודית יותר.";
+    if (m.includes("invalid") && m.includes("email")) return "כתובת האימייל אינה תקינה.";
+    if (m.includes("rate") || status === 429) return "יותר מדי בקשות. המתן דקה ונסה שוב.";
+    if (m.includes("bootstrap") || m.includes("already_bootstrapped"))
+      return "כבר קיים אדמין במערכת. רענן את הדף והתחבר במסך ההתחברות.";
+    if (status >= 500 || m.includes("internal"))
+      return "שגיאה פנימית בשרת. ניסינו אוטומטית מספר פעמים — אם זה חוזר, המתן דקה ונסה שוב.";
+    return "בדוק שהאימייל תקין ושהסיסמה באורך 8 תווים לפחות, ונסה שוב.";
+  };
+
   const handleBootstrap = async () => {
+    setBootstrapError(null);
     if (!bootstrapEmail.trim() || bootstrapPassword.length < 8) {
+      setBootstrapError({
+        message: "אימייל וסיסמה (לפחות 8 תווים) נדרשים",
+        hint: "מלא כתובת אימייל תקינה וסיסמה של 8 תווים ומעלה.",
+        status: 0,
+        attempts: 0,
+      });
       toast({ title: "אימייל וסיסמה (לפחות 8 תווים) נדרשים", variant: "destructive" });
       return;
     }
     setBootstrapping(true);
-    const { data, error } = await supabase.functions.invoke("bootstrap-admin", {
-      body: { email: bootstrapEmail, password: bootstrapPassword },
-    });
-    if (error || data?.error) {
-      toast({ title: data?.error || error?.message || "שגיאה ביצירת אדמין", variant: "destructive" });
+
+    const MAX_TRIES = 3;
+    let last: Awaited<ReturnType<typeof bootstrapOnce>> | null = null;
+
+    for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+      setBootstrapAttempt(attempt);
+      try {
+        last = await bootstrapOnce();
+      } catch (err: any) {
+        last = { ok: false, status: 0, errMsg: err?.message || "network_error", serverBody: null };
+      }
+      if (last.ok) break;
+
+      const retryable =
+        last.status >= 500 ||
+        last.status === 0 ||
+        last.status === 429 ||
+        (last.errMsg || "").toLowerCase().includes("internal");
+      if (!retryable || attempt === MAX_TRIES) break;
+      await new Promise((r) => setTimeout(r, attempt * 1200)); // backoff
+    }
+
+    if (!last?.ok) {
+      const message = last?.errMsg || "שגיאה ביצירת אדמין";
+      const hint = friendlyBootstrapHint(last?.status ?? 0, last?.errMsg ?? null);
+      setBootstrapError({
+        message,
+        hint,
+        status: last?.status ?? 0,
+        attempts: bootstrapAttempt,
+        raw: last?.serverBody ? JSON.stringify(last.serverBody) : undefined,
+      });
+      logAuditEvent("bootstrap_admin_error", `status=${last?.status} msg=${message}`);
+      toast({ title: "יצירת האדמין נכשלה", description: hint, variant: "destructive" });
       setBootstrapping(false);
       return;
     }
+
+    logAuditEvent("bootstrap_admin_success", bootstrapEmail.trim());
     toast({ title: "האדמין נוצר! אפשר להתחבר עכשיו." });
     setEmail(bootstrapEmail);
     setPassword(bootstrapPassword);
     setNeedsBootstrap(false);
     setBootstrapping(false);
   };
+
 
   const handleAddVideo = async () => {
     if (!newVideo.title || !newVideo.video_url) {
@@ -290,8 +376,26 @@ const Admin = () => {
                     className="bg-background/50"
                   />
                 </div>
+                {bootstrapError && (
+                  <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm space-y-2 text-right">
+                    <p className="font-bold text-destructive">יצירת האדמין נכשלה</p>
+                    <p className="text-muted-foreground">{bootstrapError.hint}</p>
+                    <div className="text-xs text-muted-foreground space-y-0.5 break-all">
+                      <div>קוד שגיאה: {bootstrapError.status || "—"}</div>
+                      <div>הודעת שרת: {bootstrapError.message}</div>
+                      <div>ניסיונות אוטומטיים שבוצעו: {bootstrapError.attempts}</div>
+                      {bootstrapError.raw && <div>תשובה מלאה: {bootstrapError.raw}</div>}
+                    </div>
+                    <Button size="sm" variant="outline" onClick={handleBootstrap} disabled={bootstrapping}>
+                      נסה שוב
+                    </Button>
+                  </div>
+                )}
                 <Button onClick={handleBootstrap} disabled={bootstrapping} className="w-full">
-                  {bootstrapping ? "יוצר..." : "צור אדמין"}
+                  {bootstrapping
+                    ? `יוצר... (ניסיון ${bootstrapAttempt}/3)`
+                    : "צור אדמין"}
+
                 </Button>
                 <Button variant="outline" onClick={() => navigate("/")} className="w-full">
                   <Home className="ml-2" size={18} />חזרה לאתר
@@ -388,6 +492,8 @@ const Admin = () => {
             <TabsTrigger value="updates">📢 עדכונים</TabsTrigger>
             <TabsTrigger value="background">🎨 רקע</TabsTrigger>
             <TabsTrigger value="login-logs">🛡️ יומן כניסות</TabsTrigger>
+            <TabsTrigger value="audit-log">🕵️ יומן אבטחה</TabsTrigger>
+
             <TabsTrigger value="settings">⚙️ הגדרות</TabsTrigger>
           </TabsList>
 
@@ -847,6 +953,12 @@ const Admin = () => {
           <TabsContent value="login-logs">
             <LoginLogsTab />
           </TabsContent>
+
+          {/* Security Audit Log Tab */}
+          <TabsContent value="audit-log">
+            <AuditLogTab />
+          </TabsContent>
+
 
           {/* Settings Tab */}
           <TabsContent value="settings">
