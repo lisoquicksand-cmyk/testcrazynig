@@ -376,8 +376,26 @@ const Admin = () => {
                     className="bg-background/50"
                   />
                 </div>
+                {bootstrapError && (
+                  <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm space-y-2 text-right">
+                    <p className="font-bold text-destructive">יצירת האדמין נכשלה</p>
+                    <p className="text-muted-foreground">{bootstrapError.hint}</p>
+                    <div className="text-xs text-muted-foreground space-y-0.5 break-all">
+                      <div>קוד שגיאה: {bootstrapError.status || "—"}</div>
+                      <div>הודעת שרת: {bootstrapError.message}</div>
+                      <div>ניסיונות אוטומטיים שבוצעו: {bootstrapError.attempts}</div>
+                      {bootstrapError.raw && <div>תשובה מלאה: {bootstrapError.raw}</div>}
+                    </div>
+                    <Button size="sm" variant="outline" onClick={handleBootstrap} disabled={bootstrapping}>
+                      נסה שוב
+                    </Button>
+                  </div>
+                )}
                 <Button onClick={handleBootstrap} disabled={bootstrapping} className="w-full">
-                  {bootstrapping ? "יוצר..." : "צור אדמין"}
+                  {bootstrapping
+                    ? `יוצר... (ניסיון ${bootstrapAttempt}/3)`
+                    : "צור אדמין"}
+
                 </Button>
                 <Button variant="outline" onClick={() => navigate("/")} className="w-full">
                   <Home className="ml-2" size={18} />חזרה לאתר
