@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import heroLogoDefault from "@/assets/hero-logo.png";
 import { useSiteContent } from "@/hooks/useSiteContent";
+import { useBlockDevTools } from "@/hooks/useBlockDevTools";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import CoursePage from "./pages/CoursePage";
@@ -15,6 +16,8 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const { content } = useSiteContent();
+  useBlockDevTools();
+
 
   // Keep the browser tab icon in sync with the saved logo
   useEffect(() => {
