@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { logAuditEvent } from "@/lib/auditLog";
+
 
 /**
  * Blocks common developer-tools / inspection shortcuts and the context menu.
