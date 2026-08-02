@@ -51,12 +51,22 @@ const Admin = () => {
   const [bootstrapEmail, setBootstrapEmail] = useState("");
   const [bootstrapPassword, setBootstrapPassword] = useState("");
   const [bootstrapping, setBootstrapping] = useState(false);
+  const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
+  const [bootstrapError, setBootstrapError] = useState<{
+    message: string;
+    hint: string;
+    status: number;
+    attempts: number;
+    raw?: string;
+  } | null>(null);
 
   useEffect(() => {
     supabase.functions.invoke("bootstrap-admin", { method: "GET" })
       .then(({ data }) => setNeedsBootstrap(!!data?.needs_bootstrap))
       .catch(() => setNeedsBootstrap(false));
+    logAuditEvent("admin_page_access");
   }, []);
+
 
   // Hooks
   const { videos, addVideo, updateVideo, deleteVideo } = useVideos();
