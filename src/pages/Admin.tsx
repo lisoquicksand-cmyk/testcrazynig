@@ -954,6 +954,12 @@ const Admin = () => {
             <LoginLogsTab />
           </TabsContent>
 
+          {/* Security Audit Log Tab */}
+          <TabsContent value="audit-log">
+            <AuditLogTab />
+          </TabsContent>
+
+
           {/* Settings Tab */}
           <TabsContent value="settings">
             <SettingsTab />
