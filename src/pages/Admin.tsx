@@ -25,8 +25,11 @@ import TestimonialsTab from "@/components/admin/TestimonialsTab";
 import UpdatesTab from "@/components/admin/UpdatesTab";
 import PricingTab from "@/components/admin/PricingTab";
 import LoginLogsTab from "@/components/admin/LoginLogsTab";
+import AuditLogTab from "@/components/admin/AuditLogTab";
 import CustomCursor from "@/components/CustomCursor";
+import { logAuditEvent } from "@/lib/auditLog";
 import { getLockoutInfo, logLoginAttempt, recordFailure, recordSuccess } from "@/hooks/useLoginAttempts";
+
 
 // Preset backgrounds
 const presetBackgrounds = [
